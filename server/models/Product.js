@@ -158,15 +158,15 @@ productSchema.virtual("effectivePrice").get(function () {
 
 // =============================================
 // INDEXES — for fast search & filter queries
+// Note: slug and sku already have unique:true which creates an index,
+// so we do NOT add schema.index() for those fields (avoids duplicate warning).
 // =============================================
 productSchema.index({ name: "text", description: "text", tags: "text" });
-productSchema.index({ slug: 1 });
 productSchema.index({ category: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ ratings: -1 });
 productSchema.index({ isFeatured: 1, isActive: 1 });
 productSchema.index({ stock: 1 });
-productSchema.index({ sku: 1 });
 
 // =============================================
 // PRE-SAVE HOOKS

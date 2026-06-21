@@ -1,15 +1,14 @@
 /**
  * controllers/reviewController.js
  * -----------------------------------------
- * Product review operations:
- * - Create, update, delete own reviews
- * - Get reviews for a product
- * - Like/unlike a review
- * - Admin: approve reviews, add admin reply
- * - Verified purchase check
+ * Product review system:
+ * Customer: Submit, Edit, Delete, Like
+ * Admin: Approve, Reject, Reply, List pending
+ * Rating summary and star distribution included
  * -----------------------------------------
  */
 
+const mongoose = require("mongoose");
 const Review = require("../models/Review");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
@@ -17,25 +16,96 @@ const { asyncHandler } = require("../middleware/errorHandler");
 const { deleteFromCloudinary } = require("../config/cloudinary");
 
 // =============================================
+// @route   POST /api/reviews
+// @access  Private (Customer)
+// =============================================
+const createReview = asyncHandler(async (req, res) => {
+  const { productId, rating, title, comment } = req.body;
+
+  if (!productId || !rating || !comment) {
+    res.status(400);
+    throw new Error("productId, rating and comment are required.");
+  }
+
+  const ratingNum = parseInt(rating, 10);
+  if (ratingNum < 1 || ratingNum > 5) {
+    res.status(400);
+    throw new Error("Rating must be between 1 and 5.");
+  }
+
+  // ---- Check product exists ----
+  const product = await Product.findById(productId);
+  if (!product || !product.isActive) {
+    res.status(404);
+    throw new Error("Product not found.");
+  }
+
+  // ---- Prevent duplicate review ----
+  const existing = await Review.findOne({ product: productId, user: req.user._id });
+  if (existing) {
+    res.status(409);
+    throw new Error("You have already reviewed this product. Edit your existing review instead.");
+  }
+
+  // ---- Check verified purchase ----
+  const purchaseOrder = await Order.findOne({
+    user: req.user._id,
+    "items.product": productId,
+    orderStatus: "Delivered",
+  });
+  const isVerifiedPurchase = !!purchaseOrder;
+
+  // ---- Handle uploaded images ----
+  const images = req.files
+    ? req.files.map((f) => ({ url: f.path, publicId: f.filename }))
+    : [];
+
+  const review = await Review.create({
+    product: productId,
+    user: req.user._id,
+    rating: ratingNum,
+    title: title || "",
+    comment,
+    images,
+    isVerifiedPurchase,
+    isApproved: false,
+  });
+
+  await review.populate("user", "name profilePhoto");
+
+  res.status(201).json({
+    success: true,
+    message: "Review submitted successfully! It will be visible after admin approval.",
+    review,
+  });
+});
+
+// =============================================
 // @route   GET /api/reviews/product/:productId
 // @access  Public
 // =============================================
 const getProductReviews = asyncHandler(async (req, res) => {
   const { productId } = req.params;
-  const page = parseInt(req.query.page, 10) || 1;
-  const limit = parseInt(req.query.limit, 10) || 10;
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(20, parseInt(req.query.limit, 10) || 10);
   const skip = (page - 1) * limit;
 
-  const filter = { product: productId, isApproved: true };
-
-  // ---- Sort options ----
+  // ---- Sort mapping ----
   const sortMap = {
     newest: "-createdAt",
     oldest: "createdAt",
-    rating: "-rating",
+    highest: "-rating",
+    lowest: "rating",
     helpful: "-likes",
   };
   const sortField = sortMap[req.query.sort] || "-createdAt";
+
+  // ---- Rating filter ----
+  const filter = { product: productId, isApproved: true };
+  if (req.query.rating) {
+    const r = parseInt(req.query.rating, 10);
+    if (r >= 1 && r <= 5) filter.rating = r;
+  }
 
   const [reviews, totalCount] = await Promise.all([
     Review.find(filter)
@@ -47,86 +117,43 @@ const getProductReviews = asyncHandler(async (req, res) => {
     Review.countDocuments(filter),
   ]);
 
-  // ---- Rating distribution (1-5 stars) ----
+  // ---- Rating distribution (star breakdown) ----
   const distribution = await Review.aggregate([
-    { $match: { product: require("mongoose").Types.ObjectId(productId), isApproved: true } },
+    {
+      $match: {
+        product: mongoose.Types.ObjectId.isValid(productId)
+          ? new mongoose.Types.ObjectId(productId)
+          : null,
+        isApproved: true,
+      },
+    },
     { $group: { _id: "$rating", count: { $sum: 1 } } },
     { $sort: { _id: -1 } },
   ]);
+
+  // Build complete 1-5 distribution
+  const starMap = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  distribution.forEach((d) => { starMap[d._id] = d.count; });
+
+  const totalApproved = await Review.countDocuments({ product: productId, isApproved: true });
+  const avgRating = totalApproved > 0
+    ? await Review.aggregate([
+        { $match: { product: new mongoose.Types.ObjectId(productId), isApproved: true } },
+        { $group: { _id: null, avg: { $avg: "$rating" } } },
+      ]).then((r) => Math.round((r[0]?.avg || 0) * 10) / 10)
+    : 0;
 
   res.status(200).json({
     success: true,
     totalCount,
     totalPages: Math.ceil(totalCount / limit),
     currentPage: page,
-    ratingDistribution: distribution,
+    ratingSummary: {
+      average: avgRating,
+      totalReviews: totalApproved,
+      distribution: starMap,
+    },
     reviews,
-  });
-});
-
-// =============================================
-// @route   POST /api/reviews/:productId
-// @access  Private
-// =============================================
-const createReview = asyncHandler(async (req, res) => {
-  const { productId } = req.params;
-  const { rating, title, comment } = req.body;
-
-  if (!rating || !comment) {
-    res.status(400);
-    throw new Error("Rating and comment are required.");
-  }
-
-  // ---- Check product exists ----
-  const product = await Product.findById(productId);
-  if (!product || !product.isActive) {
-    res.status(404);
-    throw new Error("Product not found.");
-  }
-
-  // ---- Check if already reviewed ----
-  const existing = await Review.findOne({
-    product: productId,
-    user: req.user._id,
-  });
-  if (existing) {
-    res.status(409);
-    throw new Error("You have already reviewed this product. You can edit your existing review.");
-  }
-
-  // ---- Check if verified purchase ----
-  const purchaseOrder = await Order.findOne({
-    user: req.user._id,
-    "items.product": productId,
-    orderStatus: "Delivered",
-  });
-  const isVerifiedPurchase = !!purchaseOrder;
-
-  // ---- Handle review images ----
-  const images = req.files
-    ? req.files.map((file) => ({
-        url: file.path,
-        publicId: file.filename,
-      }))
-    : [];
-
-  const review = await Review.create({
-    product: productId,
-    user: req.user._id,
-    rating: Number(rating),
-    title,
-    comment,
-    images,
-    isVerifiedPurchase,
-    isApproved: false, // Requires admin approval
-  });
-
-  await review.populate("user", "name profilePhoto");
-
-  res.status(201).json({
-    success: true,
-    message: "Review submitted successfully. It will be visible after admin approval.",
-    review,
   });
 });
 
@@ -140,26 +167,36 @@ const updateReview = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Review not found.");
   }
-
   if (review.user.toString() !== req.user._id.toString()) {
     res.status(403);
     throw new Error("You can only edit your own reviews.");
   }
 
   const { rating, title, comment } = req.body;
-
-  if (rating !== undefined) review.rating = Number(rating);
+  if (rating !== undefined) {
+    const r = parseInt(rating, 10);
+    if (r < 1 || r > 5) {
+      res.status(400);
+      throw new Error("Rating must be between 1 and 5.");
+    }
+    review.rating = r;
+  }
   if (title !== undefined) review.title = title;
   if (comment !== undefined) review.comment = comment;
 
-  // Reset approval after edit
-  review.isApproved = false;
+  // Handle new images
+  if (req.files && req.files.length > 0) {
+    const newImages = req.files.map((f) => ({ url: f.path, publicId: f.filename }));
+    review.images = [...review.images, ...newImages];
+  }
 
+  // Reset approval since content changed
+  review.isApproved = false;
   await review.save();
 
   res.status(200).json({
     success: true,
-    message: "Review updated. It will be re-reviewed by admin.",
+    message: "Review updated. It will be re-reviewed by admin before becoming visible.",
     review,
   });
 });
@@ -177,20 +214,25 @@ const deleteReview = asyncHandler(async (req, res) => {
 
   const isOwner = review.user.toString() === req.user._id.toString();
   const isAdmin = req.user.role === "admin";
-
   if (!isOwner && !isAdmin) {
     res.status(403);
-    throw new Error("You can only delete your own reviews.");
+    throw new Error("Access denied. You can only delete your own reviews.");
   }
 
-  // ---- Delete review images from Cloudinary ----
+  // Delete images from Cloudinary
   for (const img of review.images) {
-    await deleteFromCloudinary(img.publicId).catch((e) =>
-      console.error("Review image delete failed:", e)
-    );
+    if (img.publicId) {
+      await deleteFromCloudinary(img.publicId).catch((e) =>
+        console.error("Image delete failed:", e)
+      );
+    }
   }
 
-  await review.findOneAndDelete({ _id: review._id });
+  const productId = review.product;
+  await review.deleteOne();
+
+  // Recalculate product rating
+  await Product.updateRatings(productId);
 
   res.status(200).json({
     success: true,
@@ -199,7 +241,7 @@ const deleteReview = asyncHandler(async (req, res) => {
 });
 
 // =============================================
-// @route   PUT /api/reviews/:reviewId/like
+// @route   POST /api/reviews/:reviewId/like
 // @access  Private
 // =============================================
 const toggleLike = asyncHandler(async (req, res) => {
@@ -210,17 +252,16 @@ const toggleLike = asyncHandler(async (req, res) => {
   }
 
   const userId = req.user._id.toString();
-  const index = review.likes.findIndex((id) => id.toString() === userId);
-
+  const idx = review.likes.findIndex((id) => id.toString() === userId);
   let message;
-  if (index === -1) {
+
+  if (idx === -1) {
     review.likes.push(req.user._id);
     message = "Review liked.";
   } else {
-    review.likes.splice(index, 1);
+    review.likes.splice(idx, 1);
     message = "Like removed.";
   }
-
   await review.save();
 
   res.status(200).json({
@@ -231,45 +272,85 @@ const toggleLike = asyncHandler(async (req, res) => {
 });
 
 // =============================================
-// @route   PUT /api/reviews/:reviewId/approve
-// @access  Admin
+// ---- ADMIN ROUTES ----
 // =============================================
-const approveReview = asyncHandler(async (req, res) => {
+
+// @route   GET /api/admin/reviews
+// @access  Admin
+const getAllReviewsAdmin = asyncHandler(async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = parseInt(req.query.limit, 10) || 20;
+  const skip = (page - 1) * limit;
+
+  const filter = {};
+  if (req.query.isApproved !== undefined) {
+    filter.isApproved = req.query.isApproved === "true";
+  }
+
+  const [reviews, totalCount] = await Promise.all([
+    Review.find(filter)
+      .populate("user", "name email profilePhoto")
+      .populate("product", "name slug images")
+      .sort("-createdAt")
+      .skip(skip)
+      .limit(limit),
+    Review.countDocuments(filter),
+  ]);
+
+  res.status(200).json({
+    success: true,
+    totalCount,
+    totalPages: Math.ceil(totalCount / limit),
+    currentPage: page,
+    reviews,
+  });
+});
+
+// @route   PUT /api/admin/reviews/:reviewId/approve
+// @access  Admin
+const approveOrRejectReview = asyncHandler(async (req, res) => {
+  const { isApproved } = req.body;
+  if (typeof isApproved !== "boolean" && isApproved !== "true" && isApproved !== "false") {
+    res.status(400);
+    throw new Error("isApproved must be a boolean.");
+  }
+
+  const approved = isApproved === true || isApproved === "true";
   const review = await Review.findByIdAndUpdate(
     req.params.reviewId,
-    { isApproved: true },
+    { isApproved: approved },
     { new: true }
-  ).populate("user", "name");
+  ).populate("user", "name").populate("product", "name");
 
   if (!review) {
     res.status(404);
     throw new Error("Review not found.");
   }
 
+  // Recalculate rating if status changed
+  await Product.updateRatings(review.product._id);
+
   res.status(200).json({
     success: true,
-    message: "Review approved and is now publicly visible.",
+    message: `Review ${approved ? "approved" : "rejected"}.`,
     review,
   });
 });
 
-// =============================================
-// @route   PUT /api/reviews/:reviewId/reply
+// @route   PUT /api/admin/reviews/:reviewId/reply
 // @access  Admin
-// =============================================
 const addAdminReply = asyncHandler(async (req, res) => {
-  const { reply } = req.body;
-
-  if (!reply || !reply.trim()) {
+  const { adminReply } = req.body;
+  if (!adminReply || !adminReply.trim()) {
     res.status(400);
-    throw new Error("Reply text is required.");
+    throw new Error("adminReply text is required.");
   }
 
   const review = await Review.findByIdAndUpdate(
     req.params.reviewId,
-    { adminReply: reply },
+    { adminReply: adminReply.trim() },
     { new: true }
-  ).populate("user", "name");
+  ).populate("user", "name profilePhoto");
 
   if (!review) {
     res.status(404);
@@ -283,14 +364,11 @@ const addAdminReply = asyncHandler(async (req, res) => {
   });
 });
 
-// =============================================
-// @route   GET /api/reviews/pending
-// @access  Admin
-// =============================================
-const getPendingReviews = asyncHandler(async (req, res) => {
-  const reviews = await Review.find({ isApproved: false })
-    .populate("user", "name email")
-    .populate("product", "name slug")
+// @route   GET /api/reviews/my-reviews
+// @access  Private (Customer)
+const getMyReviews = asyncHandler(async (req, res) => {
+  const reviews = await Review.find({ user: req.user._id })
+    .populate("product", "name slug images")
     .sort("-createdAt");
 
   res.status(200).json({
@@ -301,12 +379,14 @@ const getPendingReviews = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-  getProductReviews,
   createReview,
+  getProductReviews,
   updateReview,
   deleteReview,
   toggleLike,
-  approveReview,
+  getAllReviewsAdmin,
+  approveOrRejectReview,
   addAdminReply,
-  getPendingReviews,
+  getMyReviews,
 };
+

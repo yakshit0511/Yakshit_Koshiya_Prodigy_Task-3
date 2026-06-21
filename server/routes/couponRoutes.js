@@ -7,27 +7,25 @@ const express = require("express");
 const router = express.Router();
 
 const {
+  createCoupon,
   getCoupons,
   getCouponById,
-  validateCoupon,
-  createCoupon,
   updateCoupon,
   deleteCoupon,
-  toggleCouponStatus,
+  validateCoupon,
 } = require("../controllers/couponController");
 
 const { protect } = require("../middleware/authMiddleware");
 const { isAdmin } = require("../middleware/roleMiddleware");
 
-// Customer: validate coupon before checkout
-router.post("/validate", protect, validateCoupon);
+// Customer: validate coupon (MUST be before /:couponId to avoid conflict)
+router.get("/validate/:code", protect, validateCoupon);
 
-// Admin: manage coupons
+// Admin routes
 router.get("/", protect, isAdmin, getCoupons);
-router.get("/:id", protect, isAdmin, getCouponById);
+router.get("/:couponId", protect, isAdmin, getCouponById);
 router.post("/", protect, isAdmin, createCoupon);
-router.put("/:id", protect, isAdmin, updateCoupon);
-router.delete("/:id", protect, isAdmin, deleteCoupon);
-router.put("/:id/toggle", protect, isAdmin, toggleCouponStatus);
+router.put("/:couponId", protect, isAdmin, updateCoupon);
+router.delete("/:couponId", protect, isAdmin, deleteCoupon);
 
 module.exports = router;

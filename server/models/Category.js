@@ -81,9 +81,9 @@ categorySchema.pre("save", function (next) {
 });
 
 // =============================================
-// INDEX — Speed up slug and name lookups
+// INDEX — Speed up parent category lookups
+// Note: slug and name already have unique:true indexes — no duplicate needed.
 // =============================================
-categorySchema.index({ slug: 1 });
 categorySchema.index({ parentCategory: 1 });
 
 module.exports = mongoose.model("Category", categorySchema);

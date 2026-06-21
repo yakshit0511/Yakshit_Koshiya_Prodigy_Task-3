@@ -171,9 +171,9 @@ orderSchema.pre("save", async function (next) {
 
 // =============================================
 // INDEXES
+// Note: 'orderNumber' already has unique:true — no duplicate index needed.
 // =============================================
 orderSchema.index({ user: 1, createdAt: -1 });
-orderSchema.index({ orderNumber: 1 });
 orderSchema.index({ orderStatus: 1 });
 orderSchema.index({ paymentStatus: 1 });
 

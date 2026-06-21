@@ -1,0 +1,242 @@
+/**
+ * components/layout/Navbar.jsx
+ * Full-featured navbar with:
+ * - Live search with dropdown suggestions
+ * - Cart / Wishlist badges
+ * - User menu with role-based items
+ * - Announcement scrolling bar
+ * - Category navigation bar
+ * - Sticky + shadow on scroll
+ */
+
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { FiSearch, FiShoppingCart, FiHeart, FiUser, FiLogOut, FiPackage, FiMessageSquare, FiSettings, FiHome, FiGrid } from 'react-icons/fi';
+import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
+import { useWishlist } from '../../context/WishlistContext';
+import { useDebounce } from '../../hooks/useDebounce';
+import { productApi, categoryApi } from '../../api/productApi';
+
+export default function Navbar() {
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [scrolled, setScrolled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const debouncedSearch = useDebounce(searchQuery, 400);
+  const searchRef = useRef(null);
+  const userMenuRef = useRef(null);
+
+  /* ---- Sticky shadow ---- */
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', handler);
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
+
+  /* ---- Fetch categories for nav bar ---- */
+  useEffect(() => {
+    categoryApi.getCategories()
+      .then((r) => setCategories(r.data.categories || []))
+      .catch(() => {});
+  }, []);
+
+  /* ---- Live search ---- */
+  useEffect(() => {
+    if (debouncedSearch.length < 2) { setSearchResults([]); setSearchOpen(false); return; }
+    setSearchLoading(true);
+    productApi.getProducts({ q: debouncedSearch, limit: 6 })
+      .then((r) => { setSearchResults(r.data.products || []); setSearchOpen(true); })
+      .catch(() => setSearchResults([]))
+      .finally(() => setSearchLoading(false));
+  }, [debouncedSearch]);
+
+  /* ---- Close dropdowns on outside click ---- */
+  useEffect(() => {
+    const handler = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) setSearchOpen(false);
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  /* ---- Close menu on route change ---- */
+  useEffect(() => { setMobileMenuOpen(false); setUserMenuOpen(false); }, [location.pathname]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchOpen(false);
+      setSearchQuery('');
+    }
+  };
+
+  const handleSuggestionClick = (slug) => {
+    navigate(`/products/${slug}`);
+    setSearchOpen(false);
+    setSearchQuery('');
+  };
+
+  return (
+    <>
+      {/* ---- Announcement Bar ---- */}
+      <div className="announcement-bar">
+        <div style={{ animation: 'marquee 25s linear infinite', whiteSpace: 'nowrap' }}>
+          🚚 FREE delivery on orders above ₹500 &nbsp;|&nbsp; 🌿 Fresh products daily &nbsp;|&nbsp; 💳 Cash on delivery available &nbsp;|&nbsp; 🎁 Use code WELCOME20 for 20% off your first order!
+          &nbsp;&nbsp;&nbsp;&nbsp;🚚 FREE delivery on orders above ₹500 &nbsp;|&nbsp; 🌿 Fresh products daily &nbsp;|&nbsp; 💳 Cash on delivery available
+        </div>
+        <style>{`@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
+      </div>
+
+      {/* ---- Main Navbar ---- */}
+      <header className={`navbar${scrolled ? ' scrolled' : ''}`}>
+        <div className="container navbar-inner">
+
+          {/* Logo */}
+          <Link to="/" className="navbar-logo">
+            <div className="navbar-logo-icon">🛍️</div>
+            <div>
+              <div className="navbar-logo-text">LocalStore</div>
+              <div className="navbar-logo-sub">Your neighbourhood shop</div>
+            </div>
+          </Link>
+
+          {/* Search */}
+          <form className="navbar-search desktop-only" onSubmit={handleSearch} ref={searchRef}>
+            <span className="navbar-search-icon"><FiSearch /></span>
+            <input
+              className="navbar-search-input"
+              placeholder="Search for products…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => searchResults.length > 0 && setSearchOpen(true)}
+            />
+            {searchOpen && searchResults.length > 0 && (
+              <div className="navbar-search-dropdown">
+                {searchLoading && <div style={{ padding: '12px 16px', color: 'var(--color-text-muted)', fontSize: 13 }}>Searching…</div>}
+                {searchResults.map((p) => (
+                  <div key={p._id} className="search-suggestion" onClick={() => handleSuggestionClick(p.slug)}>
+                    <img
+                      src={p.images?.[0]?.url || '/placeholder-product.png'}
+                      alt={p.name}
+                      className="search-suggestion-img"
+                      onError={(e) => { e.target.src = 'https://via.placeholder.com/40x40?text=P'; }}
+                    />
+                    <div className="search-suggestion-info">
+                      <div className="search-suggestion-name">{p.name}</div>
+                      <div className="search-suggestion-price">
+                        ₹{(p.discountPrice || p.price)?.toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div
+                  style={{ padding: '10px 16px', borderTop: '1px solid var(--color-border)', fontSize: 13, color: 'var(--color-primary)', cursor: 'pointer', fontWeight: 600 }}
+                  onClick={handleSearch}
+                >
+                  View all results for "{searchQuery}" →
+                </div>
+              </div>
+            )}
+          </form>
+
+          {/* Actions */}
+          <div className="navbar-actions">
+            {/* Mobile search */}
+            <button className="navbar-action-btn mobile-only" onClick={() => navigate('/search')}>
+              <FiSearch />
+            </button>
+
+            {/* Wishlist */}
+            {isAuthenticated && (
+              <Link to="/wishlist" className="navbar-action-btn desktop-only" style={{ textDecoration: 'none' }}>
+                <FiHeart />
+                {wishlistCount > 0 && <span className="navbar-badge">{wishlistCount}</span>}
+              </Link>
+            )}
+
+            {/* Cart */}
+            <Link to="/cart" className="navbar-action-btn" style={{ textDecoration: 'none' }}>
+              <FiShoppingCart />
+              {cartCount > 0 && <span className="navbar-badge">{cartCount > 99 ? '99+' : cartCount}</span>}
+            </Link>
+
+            {/* User menu */}
+            <div className="user-dropdown" ref={userMenuRef}>
+              <button className="navbar-action-btn" onClick={() => setUserMenuOpen((o) => !o)}>
+                <FiUser />
+              </button>
+              {userMenuOpen && (
+                <div className="user-dropdown-menu">
+                  {isAuthenticated ? (
+                    <>
+                      <div className="user-dropdown-header">
+                        <div className="user-dropdown-name">{user?.name}</div>
+                        <div className="user-dropdown-email">{user?.email}</div>
+                      </div>
+                      {isAdmin ? (
+                        <>
+                          <Link to="/admin/dashboard" className="user-dropdown-item">
+                            <FiGrid size={15} /> Admin Dashboard
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          <Link to="/profile" className="user-dropdown-item"><FiUser size={15} /> My Profile</Link>
+                          <Link to="/my-orders" className="user-dropdown-item"><FiPackage size={15} /> My Orders</Link>
+                          <Link to="/wishlist" className="user-dropdown-item"><FiHeart size={15} /> Wishlist</Link>
+                          <Link to="/support" className="user-dropdown-item"><FiMessageSquare size={15} /> Support</Link>
+                          <Link to="/addresses" className="user-dropdown-item"><FiSettings size={15} /> Addresses</Link>
+                        </>
+                      )}
+                      <div className="user-dropdown-divider" />
+                      <button onClick={logout} className="user-dropdown-item danger">
+                        <FiLogOut size={15} /> Logout
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/login" className="user-dropdown-item">🔑 Login</Link>
+                      <Link to="/register" className="user-dropdown-item">📝 Register</Link>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ---- Category Bar ---- */}
+      <div className="category-bar">
+        <div className="container category-bar-inner">
+          <Link to="/products" className={`category-bar-item ${location.pathname === '/products' && !location.search ? 'active' : ''}`}>
+            🏪 All Products
+          </Link>
+          {categories.slice(0, 10).map((cat) => (
+            <Link
+              key={cat._id}
+              to={`/category/${cat.slug}`}
+              className={`category-bar-item ${location.pathname === `/category/${cat.slug}` ? 'active' : ''}`}
+            >
+              {cat.name}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}

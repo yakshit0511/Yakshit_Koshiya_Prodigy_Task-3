@@ -150,8 +150,8 @@ couponSchema.methods.calculateDiscount = function (orderAmount) {
 
 // =============================================
 // INDEXES
+// Note: 'code' already has unique:true — no duplicate index needed.
 // =============================================
-couponSchema.index({ code: 1 });
 couponSchema.index({ validUntil: 1 });
 couponSchema.index({ isActive: 1 });
 

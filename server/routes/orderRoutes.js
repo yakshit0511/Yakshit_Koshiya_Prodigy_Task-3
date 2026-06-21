@@ -1,6 +1,8 @@
 /**
  * routes/orderRoutes.js
  * Mounted at: /api/orders
+ * Customer-facing order routes only.
+ * Admin order routes are on /api/admin/orders.
  */
 
 const express = require("express");
@@ -8,39 +10,25 @@ const router = express.Router();
 
 const {
   placeOrder,
+  verifyPayment,
   getMyOrders,
-  getOrderById,
-  getAllOrdersAdmin,
-  updateOrderStatus,
+  getMyOrderById,
   cancelOrder,
   requestReturn,
   downloadInvoice,
-  createRazorpayOrder,
-  verifyRazorpayPayment,
 } = require("../controllers/orderController");
 
 const { protect } = require("../middleware/authMiddleware");
-const { isAdmin } = require("../middleware/roleMiddleware");
 
-// All order routes require auth
+// All order routes require authentication
 router.use(protect);
 
-// Customer routes
 router.post("/place", placeOrder);
+router.post("/verify-payment", verifyPayment);
 router.get("/my-orders", getMyOrders);
-
-// Razorpay payment routes
-router.post("/razorpay/create", createRazorpayOrder);
-router.post("/razorpay/verify", verifyRazorpayPayment);
-
-// Admin routes (must come before /:id to avoid conflicts)
-router.get("/admin/all", isAdmin, getAllOrdersAdmin);
-
-// Routes with :id param
-router.get("/:id", getOrderById);
-router.put("/:id/status", isAdmin, updateOrderStatus);
-router.put("/:id/cancel", cancelOrder);
-router.put("/:id/return", requestReturn);
-router.get("/:id/invoice", downloadInvoice);
+router.get("/my-orders/:orderId", getMyOrderById);
+router.post("/:orderId/cancel", cancelOrder);
+router.post("/:orderId/return-request", requestReturn);
+router.get("/:orderId/invoice", downloadInvoice);
 
 module.exports = router;

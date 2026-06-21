@@ -1,9 +1,11 @@
 /**
  * controllers/cartController.js
  * -----------------------------------------
- * Shopping cart operations:
- * - Get cart, add item, update quantity,
- *   remove item, clear cart, apply/remove coupon
+ * Complete shopping cart operations:
+ * - Get cart with live price sync & stock validation
+ * - Add / update / remove items with stock checks
+ * - Apply / remove coupons with full validation
+ * - Auto-calculate: subtotal, shipping, discount, total
  * -----------------------------------------
  */
 
@@ -12,51 +14,155 @@ const Product = require("../models/Product");
 const Coupon = require("../models/Coupon");
 const { asyncHandler } = require("../middleware/errorHandler");
 
+// ---- Shipping thresholds ----
+const FREE_SHIPPING_ABOVE = 500; // ₹500
+const SHIPPING_CHARGE = 50; // ₹50 flat
+
+// =============================================
+// HELPER — Build populated, recalculated cart response
+// Fetches cart from DB with full product details,
+// syncs prices, checks stock, calculates all totals.
+// =============================================
+const buildCartResponse = async (userId) => {
+  const cart = await Cart.findOne({ user: userId }).populate({
+    path: "items.product",
+    select: "name slug images price discountPrice stock isInStock unit isActive",
+  }).populate("couponApplied", "code discountType discountValue maxDiscountAmount description");
+
+  if (!cart || cart.items.length === 0) {
+    return {
+      items: [],
+      couponApplied: null,
+      subtotal: 0,
+      discountAmount: 0,
+      shippingCharge: 0,
+      totalAmount: 0,
+      itemCount: 0,
+    };
+  }
+
+  let subtotal = 0;
+  const priceChanges = [];
+  const stockIssues = [];
+
+  // ---- Process each item ----
+  const processedItems = cart.items.map((item) => {
+    const product = item.product;
+
+    // Product was deleted / deactivated
+    if (!product || !product.isActive) {
+      stockIssues.push({ productId: item.product, reason: "Product no longer available" });
+      return null;
+    }
+
+    // Current effective price
+    const currentPrice =
+      product.discountPrice && product.discountPrice < product.price
+        ? product.discountPrice
+        : product.price;
+
+    // Detect price change since item was added
+    const savedEffective = item.discountPrice && item.discountPrice < item.price
+      ? item.discountPrice : item.price;
+
+    if (Math.abs(currentPrice - savedEffective) > 0.01) {
+      priceChanges.push({
+        productName: product.name,
+        oldPrice: savedEffective,
+        newPrice: currentPrice,
+      });
+      // Update snapshot in memory (will be saved by caller)
+      item.price = product.price;
+      item.discountPrice = product.discountPrice;
+    }
+
+    // Stock status
+    const outOfStock = !product.isInStock || product.stock === 0;
+    const insufficientStock = !outOfStock && product.stock < item.quantity;
+
+    if (outOfStock || insufficientStock) {
+      stockIssues.push({
+        productName: product.name,
+        availableStock: product.stock,
+        requestedQty: item.quantity,
+      });
+    }
+
+    const lineTotal = currentPrice * item.quantity;
+    subtotal += lineTotal;
+
+    return {
+      _id: item._id,
+      product,
+      quantity: item.quantity,
+      price: item.price,
+      discountPrice: item.discountPrice,
+      effectivePrice: currentPrice,
+      lineTotal,
+      outOfStock,
+      insufficientStock: insufficientStock && !outOfStock,
+    };
+  }).filter(Boolean); // Remove nulls (deleted products)
+
+  subtotal = Math.round(subtotal * 100) / 100;
+
+  // ---- Coupon discount ----
+  let discountAmount = 0;
+  let couponInfo = null;
+  if (cart.couponApplied) {
+    const coupon = cart.couponApplied;
+    const { valid } = coupon.isValid ? coupon.isValid(subtotal, userId) : { valid: true };
+    if (valid) {
+      if (coupon.discountType === "percentage") {
+        discountAmount = (subtotal * coupon.discountValue) / 100;
+        if (coupon.maxDiscountAmount && discountAmount > coupon.maxDiscountAmount) {
+          discountAmount = coupon.maxDiscountAmount;
+        }
+      } else {
+        discountAmount = Math.min(coupon.discountValue, subtotal);
+      }
+      discountAmount = Math.round(discountAmount * 100) / 100;
+      couponInfo = {
+        _id: coupon._id,
+        code: coupon.code,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
+        description: coupon.description,
+      };
+    } else {
+      // Coupon no longer valid, remove it silently
+      cart.couponApplied = null;
+      await cart.save({ validateBeforeSave: false });
+    }
+  }
+
+  const afterDiscount = subtotal - discountAmount;
+  const shippingCharge = afterDiscount >= FREE_SHIPPING_ABOVE ? 0 : SHIPPING_CHARGE;
+  const totalAmount = Math.round((afterDiscount + shippingCharge) * 100) / 100;
+
+  return {
+    _id: cart._id,
+    items: processedItems,
+    couponApplied: couponInfo,
+    subtotal,
+    discountAmount,
+    shippingCharge,
+    totalAmount,
+    freeShippingEligible: afterDiscount >= FREE_SHIPPING_ABOVE,
+    amountForFreeShipping: Math.max(0, FREE_SHIPPING_ABOVE - afterDiscount),
+    itemCount: processedItems.reduce((sum, i) => sum + i.quantity, 0),
+    priceChanges: priceChanges.length > 0 ? priceChanges : undefined,
+    stockIssues: stockIssues.length > 0 ? stockIssues : undefined,
+  };
+};
+
 // =============================================
 // @route   GET /api/cart
 // @access  Private
 // =============================================
 const getCart = asyncHandler(async (req, res) => {
-  const cart = await Cart.findOne({ user: req.user._id }).populate(
-    "items.product",
-    "name slug images price discountPrice isInStock stock unit"
-  ).populate("couponApplied", "code discountType discountValue");
-
-  if (!cart) {
-    return res.status(200).json({
-      success: true,
-      cart: {
-        items: [],
-        subtotal: 0,
-        discountAmount: 0,
-        totalAmount: 0,
-        couponApplied: null,
-      },
-    });
-  }
-
-  // ---- Sync prices with current product prices ----
-  // (inform user if prices changed since adding to cart)
-  const priceChanges = [];
-  for (const item of cart.items) {
-    if (item.product) {
-      const currentPrice = item.product.discountPrice || item.product.price;
-      const savedPrice = item.discountPrice || item.price;
-      if (Math.abs(currentPrice - savedPrice) > 0.01) {
-        priceChanges.push({
-          productName: item.product.name,
-          oldPrice: savedPrice,
-          newPrice: currentPrice,
-        });
-      }
-    }
-  }
-
-  res.status(200).json({
-    success: true,
-    cart,
-    priceChanges: priceChanges.length > 0 ? priceChanges : undefined,
-  });
+  const cart = await buildCartResponse(req.user._id);
+  res.status(200).json({ success: true, cart });
 });
 
 // =============================================
@@ -68,90 +174,84 @@ const addToCart = asyncHandler(async (req, res) => {
 
   if (!productId) {
     res.status(400);
-    throw new Error("Product ID is required.");
+    throw new Error("productId is required.");
   }
 
-  const qty = Math.max(1, parseInt(quantity, 10));
+  const qty = Math.max(1, parseInt(quantity, 10) || 1);
 
   // ---- Validate product ----
   const product = await Product.findById(productId);
   if (!product || !product.isActive) {
     res.status(404);
-    throw new Error("Product not found or unavailable.");
+    throw new Error("Product not found or is no longer available.");
   }
-  if (!product.isInStock || product.stock < qty) {
+  if (product.stock <= 0 || !product.isInStock) {
     res.status(400);
-    throw new Error(
-      `Insufficient stock. Only ${product.stock} unit(s) available.`
-    );
+    throw new Error("This product is currently out of stock.");
   }
 
-  // ---- Find or create cart ----
+  // ---- Get or create cart ----
   let cart = await Cart.findOne({ user: req.user._id });
   if (!cart) {
     cart = new Cart({ user: req.user._id, items: [] });
   }
 
   // ---- Check if product already in cart ----
-  const existingItem = cart.items.find(
+  const existingIdx = cart.items.findIndex(
     (item) => item.product.toString() === productId
   );
 
-  if (existingItem) {
-    // Update quantity, but cap at available stock
-    const newQty = existingItem.quantity + qty;
+  if (existingIdx > -1) {
+    const newQty = cart.items[existingIdx].quantity + qty;
     if (newQty > product.stock) {
       res.status(400);
       throw new Error(
-        `Cannot add more. Only ${product.stock} unit(s) in stock.`
+        `Cannot add ${qty} more. Only ${product.stock} unit(s) available and you already have ${cart.items[existingIdx].quantity} in your cart.`
       );
     }
-    existingItem.quantity = newQty;
+    cart.items[existingIdx].quantity = newQty;
     // Refresh price snapshot
-    existingItem.price = product.price;
-    existingItem.discountPrice = product.discountPrice;
+    cart.items[existingIdx].price = product.price;
+    cart.items[existingIdx].discountPrice = product.discountPrice || null;
   } else {
-    // Add new item with price snapshot
+    if (qty > product.stock) {
+      res.status(400);
+      throw new Error(
+        `Only ${product.stock} unit(s) available. You requested ${qty}.`
+      );
+    }
     cart.items.push({
       product: productId,
       quantity: qty,
       price: product.price,
-      discountPrice: product.discountPrice,
+      discountPrice: product.discountPrice || null,
     });
   }
 
   await cart.save();
 
-  // Re-fetch with populated data
-  const populatedCart = await Cart.findById(cart._id).populate(
-    "items.product",
-    "name slug images price discountPrice isInStock unit"
-  );
-
+  const cartData = await buildCartResponse(req.user._id);
   res.status(200).json({
     success: true,
-    message: "Product added to cart.",
-    cart: populatedCart,
+    message: `"${product.name}" added to cart.`,
+    cart: cartData,
   });
 });
 
 // =============================================
-// @route   PUT /api/cart/update
+// @route   PUT /api/cart/update/:productId
 // @access  Private
 // =============================================
 const updateCartItem = asyncHandler(async (req, res) => {
-  const { productId, quantity } = req.body;
+  const { productId } = req.params;
+  const { quantity } = req.body;
 
-  if (!productId || quantity === undefined) {
+  if (quantity === undefined || quantity === null) {
     res.status(400);
-    throw new Error("Product ID and quantity are required.");
+    throw new Error("quantity is required.");
   }
 
   const qty = parseInt(quantity, 10);
-  if (qty < 1) {
-    res.status(400);
-    throw new Error("Quantity must be at least 1. Use remove to delete the item.");
-  }
 
   const cart = await Cart.findOne({ user: req.user._id });
   if (!cart) {
@@ -159,35 +259,49 @@ const updateCartItem = asyncHandler(async (req, res) => {
     throw new Error("Cart not found.");
   }
 
-  const item = cart.items.find(
-    (i) => i.product.toString() === productId
+  const itemIdx = cart.items.findIndex(
+    (item) => item.product.toString() === productId
   );
-  if (!item) {
+  if (itemIdx === -1) {
     res.status(404);
-    throw new Error("Item not in cart.");
+    throw new Error("Product not in cart.");
   }
 
-  // ---- Check stock ----
+  // ---- Quantity 0 = remove item ----
+  if (qty <= 0) {
+    cart.items.splice(itemIdx, 1);
+    await cart.save();
+    const cartData = await buildCartResponse(req.user._id);
+    return res.status(200).json({
+      success: true,
+      message: "Item removed from cart.",
+      cart: cartData,
+    });
+  }
+
+  // ---- Validate stock ----
   const product = await Product.findById(productId);
-  if (!product || product.stock < qty) {
+  if (!product) {
+    res.status(404);
+    throw new Error("Product not found.");
+  }
+  if (qty > product.stock) {
     res.status(400);
     throw new Error(
-      `Only ${product ? product.stock : 0} unit(s) available.`
+      `Only ${product.stock} unit(s) in stock. Cannot set quantity to ${qty}.`
     );
   }
 
-  item.quantity = qty;
+  cart.items[itemIdx].quantity = qty;
+  cart.items[itemIdx].price = product.price;
+  cart.items[itemIdx].discountPrice = product.discountPrice || null;
   await cart.save();
 
-  const populatedCart = await Cart.findById(cart._id).populate(
-    "items.product",
-    "name slug images price discountPrice isInStock unit"
-  );
-
+  const cartData = await buildCartResponse(req.user._id);
   res.status(200).json({
     success: true,
     message: "Cart updated.",
-    cart: populatedCart,
+    cart: cartData,
   });
 });
 
@@ -196,26 +310,31 @@ const updateCartItem = asyncHandler(async (req, res) => {
 // @access  Private
 // =============================================
 const removeFromCart = asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+
   const cart = await Cart.findOne({ user: req.user._id });
   if (!cart) {
     res.status(404);
     throw new Error("Cart not found.");
   }
 
+  const before = cart.items.length;
   cart.items = cart.items.filter(
-    (item) => item.product.toString() !== req.params.productId
+    (item) => item.product.toString() !== productId
   );
+
+  if (cart.items.length === before) {
+    res.status(404);
+    throw new Error("Product not found in cart.");
+  }
+
   await cart.save();
 
-  const populatedCart = await Cart.findById(cart._id).populate(
-    "items.product",
-    "name slug images price discountPrice isInStock unit"
-  );
-
+  const cartData = await buildCartResponse(req.user._id);
   res.status(200).json({
     success: true,
     message: "Item removed from cart.",
-    cart: populatedCart,
+    cart: cartData,
   });
 });
 
@@ -226,12 +345,28 @@ const removeFromCart = asyncHandler(async (req, res) => {
 const clearCart = asyncHandler(async (req, res) => {
   await Cart.findOneAndUpdate(
     { user: req.user._id },
-    { items: [], couponApplied: null, discountAmount: 0 }
+    {
+      items: [],
+      couponApplied: null,
+      subtotal: 0,
+      discountAmount: 0,
+      totalAmount: 0,
+    },
+    { upsert: false }
   );
 
   res.status(200).json({
     success: true,
     message: "Cart cleared.",
+    cart: {
+      items: [],
+      couponApplied: null,
+      subtotal: 0,
+      discountAmount: 0,
+      shippingCharge: 0,
+      totalAmount: 0,
+      itemCount: 0,
+    },
   });
 });
 
@@ -240,48 +375,76 @@ const clearCart = asyncHandler(async (req, res) => {
 // @access  Private
 // =============================================
 const applyCoupon = asyncHandler(async (req, res) => {
-  const { code } = req.body;
+  const { couponCode } = req.body;
 
-  if (!code) {
+  if (!couponCode || !couponCode.trim()) {
     res.status(400);
     throw new Error("Coupon code is required.");
   }
 
-  const coupon = await Coupon.findOne({ code: code.toUpperCase() });
+  const coupon = await Coupon.findOne({ code: couponCode.trim().toUpperCase() });
   if (!coupon) {
     res.status(404);
-    throw new Error("Invalid coupon code.");
+    throw new Error("Invalid coupon code. Please check and try again.");
   }
 
-  const cart = await Cart.findOne({ user: req.user._id });
+  // ---- Get cart to calculate subtotal ----
+  const cart = await Cart.findOne({ user: req.user._id }).populate({
+    path: "items.product",
+    select: "price discountPrice",
+  });
+
   if (!cart || cart.items.length === 0) {
     res.status(400);
-    throw new Error("Your cart is empty.");
+    throw new Error("Your cart is empty. Add products before applying a coupon.");
   }
 
-  // ---- Validate coupon ----
-  const { valid, message } = coupon.isValid(cart.subtotal, req.user._id);
+  // Calculate live subtotal
+  let subtotal = 0;
+  for (const item of cart.items) {
+    if (item.product) {
+      const ep = item.product.discountPrice && item.product.discountPrice < item.product.price
+        ? item.product.discountPrice : item.product.price;
+      subtotal += ep * item.quantity;
+    }
+  }
+
+  // ---- Full coupon validation ----
+  const { valid, message } = coupon.isValid(subtotal, req.user._id);
   if (!valid) {
     res.status(400);
     throw new Error(message);
   }
 
   // ---- Calculate discount ----
-  const discount = coupon.calculateDiscount(cart.subtotal);
+  let discountAmount = 0;
+  if (coupon.discountType === "percentage") {
+    discountAmount = (subtotal * coupon.discountValue) / 100;
+    if (coupon.maxDiscountAmount && discountAmount > coupon.maxDiscountAmount) {
+      discountAmount = coupon.maxDiscountAmount;
+    }
+  } else {
+    discountAmount = Math.min(coupon.discountValue, subtotal);
+  }
+  discountAmount = Math.round(discountAmount * 100) / 100;
+
+  // ---- Save coupon to cart ----
   cart.couponApplied = coupon._id;
-  cart.discountAmount = discount;
+  cart.discountAmount = discountAmount;
   await cart.save();
+
+  const cartData = await buildCartResponse(req.user._id);
 
   res.status(200).json({
     success: true,
-    message: `Coupon '${coupon.code}' applied! You save ₹${discount.toFixed(2)}.`,
-    discountAmount: discount,
-    totalAmount: cart.totalAmount,
-    coupon: {
+    message: `🎉 Coupon "${coupon.code}" applied! You save ₹${discountAmount.toFixed(2)}.`,
+    discountBreakdown: {
       code: coupon.code,
-      discountType: coupon.discountType,
-      discountValue: coupon.discountValue,
+      type: coupon.discountType,
+      value: coupon.discountValue,
+      discountAmount,
     },
+    cart: cartData,
   });
 });
 
@@ -296,14 +459,20 @@ const removeCoupon = asyncHandler(async (req, res) => {
     throw new Error("Cart not found.");
   }
 
+  if (!cart.couponApplied) {
+    res.status(400);
+    throw new Error("No coupon is currently applied.");
+  }
+
   cart.couponApplied = null;
   cart.discountAmount = 0;
   await cart.save();
 
+  const cartData = await buildCartResponse(req.user._id);
   res.status(200).json({
     success: true,
     message: "Coupon removed.",
-    totalAmount: cart.totalAmount,
+    cart: cartData,
   });
 });
 
@@ -315,4 +484,5 @@ module.exports = {
   clearCart,
   applyCoupon,
   removeCoupon,
+  buildCartResponse, // Export for use in orderController
 };

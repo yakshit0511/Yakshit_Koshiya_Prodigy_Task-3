@@ -177,7 +177,7 @@ const templates = {
     `, "Order Status Update"),
   }),
 
-  /** Support ticket reply notification */
+  /** Support ticket reply notification from admin */
   supportReply: (user, ticket, replyMessage) => ({
     subject: `💬 New Reply on Ticket #${ticket.ticketNumber}`,
     html: emailLayout(`
@@ -193,6 +193,27 @@ const templates = {
       </div>
       <a href="${process.env.CLIENT_URL}/support/${ticket._id}" class="btn">View Full Conversation</a>
     `, "Support Reply"),
+  }),
+
+  /** Acknowledgment email sent when customer creates a new ticket */
+  supportAcknowledgment: (user, ticket) => ({
+    subject: `🎫 Ticket #${ticket.ticketNumber} Received — We'll be in touch!`,
+    html: emailLayout(`
+      <h2>Support Ticket Received 🎫</h2>
+      <p>Hi <strong>${user.name}</strong>,</p>
+      <p>Thank you for reaching out! We've received your support request and our team will respond within <strong>24 hours</strong>.</p>
+      <div class="info-box">
+        <p>🎫 Ticket Number: <strong>${ticket.ticketNumber}</strong></p>
+        <p>📋 Subject: ${ticket.subject}</p>
+        <p>🏷️ Category: ${ticket.category}</p>
+        <p>⚡ Priority: ${ticket.priority}</p>
+        <p>📌 Status: <span class="badge badge-blue">Open</span></p>
+      </div>
+      <p>You can track your ticket status and reply directly through your account.</p>
+      <a href="${process.env.CLIENT_URL}/support/${ticket._id}" class="btn">View My Ticket</a>
+      <div class="divider"></div>
+      <p style="color:#9ca3af;font-size:13px;">Please do not reply to this email. Use the ticket page to add more information.</p>
+    `, "Ticket Acknowledgment"),
   }),
 };
 

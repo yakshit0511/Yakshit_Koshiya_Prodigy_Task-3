@@ -1,6 +1,7 @@
 /**
  * routes/cartRoutes.js
  * Mounted at: /api/cart
+ * All routes require JWT authentication.
  */
 
 const express = require("express");
@@ -23,7 +24,7 @@ router.use(protect);
 
 router.get("/", getCart);
 router.post("/add", addToCart);
-router.put("/update", updateCartItem);
+router.put("/update/:productId", updateCartItem);
 router.delete("/remove/:productId", removeFromCart);
 router.delete("/clear", clearCart);
 router.post("/apply-coupon", applyCoupon);
