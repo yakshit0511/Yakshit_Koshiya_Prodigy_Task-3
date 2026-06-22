@@ -407,6 +407,6 @@ export default function AdminAddProductPage() {
           </div>
         </div>
       </form>
-    </form>
+    </AdminLayoutWrapper>
   );
 }

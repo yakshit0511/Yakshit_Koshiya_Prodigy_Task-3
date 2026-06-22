@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { FiFilter, FiX, FiChevronDown, FiChevronUp, FiGrid, FiList } from 'react-icons/fi';
-import { FixedSizeList as List } from 'react-window';
+import { List } from 'react-window';
 import ProductCard from '../../components/product/ProductCard';
 import { SkeletonCard, EmptyState, Pagination, Modal, SEO } from '../../components/common/index.jsx';
 import { productApi, categoryApi } from '../../api/productApi';

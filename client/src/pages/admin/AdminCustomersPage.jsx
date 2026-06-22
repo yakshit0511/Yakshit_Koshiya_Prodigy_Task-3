@@ -6,7 +6,7 @@ import DataTable from '../../components/common/DataTable';
 import StatusBadge from '../../components/common/StatusBadge';
 import AdminModal from '../../components/common/AdminModal';
 import { LoadingSpinner } from '../../components/common/index.jsx';
-import { FiUser, FiMail, FiPhone, FiCalendar, FiShoppingBag, FiDollarSign, FiStar, FiMessageSquare, FiShieldAlert } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiCalendar, FiShoppingBag, FiDollarSign, FiStar, FiMessageSquare } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function AdminCustomersPage() {
