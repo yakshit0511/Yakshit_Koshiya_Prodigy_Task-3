@@ -148,10 +148,10 @@ export default function AdminAddProductPage() {
 
       fd.append('tags', JSON.stringify(tagList));
 
-      const formattedSpecs = {};
+      const formattedSpecs = [];
       specs.forEach((s) => {
         if (s.key.trim() && s.value.trim()) {
-          formattedSpecs[s.key.trim()] = s.value.trim();
+          formattedSpecs.push({ key: s.key.trim(), value: s.value.trim() });
         }
       });
       fd.append('specifications', JSON.stringify(formattedSpecs));

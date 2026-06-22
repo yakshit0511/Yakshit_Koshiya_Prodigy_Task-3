@@ -70,7 +70,9 @@ export default function AdminEditProductPage() {
       setExistingImages(product.images || []);
 
       // Specifications prefill
-      if (product.specifications && Object.keys(product.specifications).length > 0) {
+      if (product.specifications && Array.isArray(product.specifications) && product.specifications.length > 0) {
+        setSpecs(product.specifications.map((s) => ({ key: s.key, value: s.value })));
+      } else if (product.specifications && typeof product.specifications === 'object' && Object.keys(product.specifications).length > 0) {
         setSpecs(Object.entries(product.specifications).map(([k, v]) => ({ key: k, value: v })));
       } else {
         setSpecs([{ key: '', value: '' }]);
@@ -169,10 +171,10 @@ export default function AdminEditProductPage() {
       // Existing images ordered list send or save
       fd.append('existingImages', JSON.stringify(existingImages));
 
-      const formattedSpecs = {};
+      const formattedSpecs = [];
       specs.forEach((s) => {
         if (s.key.trim() && s.value.trim()) {
-          formattedSpecs[s.key.trim()] = s.value.trim();
+          formattedSpecs.push({ key: s.key.trim(), value: s.value.trim() });
         }
       });
       fd.append('specifications', JSON.stringify(formattedSpecs));

@@ -11,7 +11,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FiSearch, FiShoppingCart, FiHeart, FiUser, FiLogOut, FiPackage, FiMessageSquare, FiSettings, FiHome, FiGrid, FiBell } from 'react-icons/fi';
+import { FiSearch, FiShoppingCart, FiHeart, FiUser, FiLogOut, FiPackage, FiMessageSquare, FiSettings, FiHome, FiGrid, FiBell, FiSun, FiMoon } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
@@ -36,6 +36,16 @@ export default function Navbar() {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((t) => (t === 'light' ? 'dark' : 'light'));
+  };
 
   const debouncedSearch = useDebounce(searchQuery, 400);
   const searchRef = useRef(null);
@@ -171,7 +181,7 @@ export default function Navbar() {
 
             {/* Wishlist */}
             {isAuthenticated && (
-              <Link to="/wishlist" className="navbar-action-btn desktop-only" style={{ textDecoration: 'none' }}>
+              <Link to="/wishlist" className="navbar-action-btn" style={{ textDecoration: 'none' }}>
                 <FiHeart />
                 {wishlistCount > 0 && <span className="navbar-badge">{wishlistCount}</span>}
               </Link>
@@ -182,6 +192,11 @@ export default function Navbar() {
               <FiShoppingCart />
               {cartCount > 0 && <span className="navbar-badge">{cartCount > 99 ? '99+' : cartCount}</span>}
             </Link>
+
+            {/* Theme Toggle */}
+            <button className="navbar-action-btn" onClick={toggleTheme} title="Toggle theme">
+              {theme === 'light' ? <FiMoon /> : <FiSun />}
+            </button>
 
             {/* Notification Center */}
             {isAuthenticated && (
@@ -225,11 +240,11 @@ export default function Navbar() {
                               padding: '12px 16px',
                               borderBottom: '1px solid var(--color-border)',
                               cursor: 'pointer',
-                              background: n.isRead ? 'transparent' : '#f0fdf4',
+                              background: n.isRead ? 'transparent' : 'var(--color-primary-light)',
                               transition: 'background var(--transition-fast)',
                             }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = n.isRead ? 'transparent' : '#f0fdf4'; }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = n.isRead ? 'transparent' : 'var(--color-primary-light)'; }}
                           >
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                               <span style={{ fontWeight: 600, fontSize: 13, color: n.isRead ? 'var(--color-text)' : 'var(--color-primary)' }}>

@@ -65,8 +65,7 @@ export default function CheckoutPage() {
     if (!selectedAddr) { toast.error('Please select a delivery address'); return; }
     setPlacing(true);
     try {
-      const addr = addresses.find(a => a._id === selectedAddr);
-      const orderData = { shippingAddressId: selectedAddr, paymentMethod: payment, deliveryNote: note, couponCode: cart?.couponApplied?.code };
+      const orderData = { addressId: selectedAddr, paymentMethod: payment === 'Razorpay' ? 'Online' : 'COD', notes: note, couponCode: cart?.couponApplied?.code };
 
       if (payment === 'Razorpay') {
         const loaded = await loadRazorpay();
