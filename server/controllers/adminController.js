@@ -17,12 +17,22 @@ const Order = require("../models/Order");
 const Review = require("../models/Review");
 const SupportTicket = require("../models/SupportTicket");
 const { asyncHandler } = require("../middleware/errorHandler");
+const { getCache, setCache, clearCachePattern } = require("../utils/cache");
 
 // =============================================
 // @route   GET /api/admin/dashboard/stats
 // @access  Admin
 // =============================================
+// @route   GET /api/admin/dashboard/stats
+// @access  Admin
+// =============================================
 const getDashboardStats = asyncHandler(async (req, res) => {
+  const cacheKey = "admin:stats";
+  const cached = getCache(cacheKey);
+  if (cached) {
+    return res.status(200).json(cached);
+  }
+
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -80,7 +90,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     ? Math.round(((ordersThisMonth - ordersLastMonth) / ordersLastMonth) * 100)
     : 100;
 
-  res.status(200).json({
+  const statsData = {
     success: true,
     stats: {
       revenue: {
@@ -106,7 +116,10 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       openTickets,
       pendingReviews,
     },
-  });
+  };
+
+  setCache(cacheKey, statsData, 300); // 5 min cache
+  res.status(200).json(statsData);
 });
 
 // =============================================
@@ -116,6 +129,12 @@ const getDashboardStats = asyncHandler(async (req, res) => {
 // monthly revenue for last 12 months
 // =============================================
 const getRevenueChart = asyncHandler(async (req, res) => {
+  const cacheKey = "admin:revenue-chart";
+  const cached = getCache(cacheKey);
+  if (cached) {
+    return res.status(200).json(cached);
+  }
+
   const now = new Date();
 
   // ---- Daily — last 30 days ----
@@ -181,11 +200,14 @@ const getRevenueChart = asyncHandler(async (req, res) => {
     orders: m.orders,
   }));
 
-  res.status(200).json({
+  const chartData = {
     success: true,
     daily: dailyData,
     monthly: monthlyData,
-  });
+  };
+
+  setCache(cacheKey, chartData, 300); // 5 min cache
+  res.status(200).json(chartData);
 });
 
 // =============================================
@@ -193,6 +215,12 @@ const getRevenueChart = asyncHandler(async (req, res) => {
 // @access  Admin
 // =============================================
 const getTopProducts = asyncHandler(async (req, res) => {
+  const cacheKey = "admin:top-products";
+  const cached = getCache(cacheKey);
+  if (cached) {
+    return res.status(200).json(cached);
+  }
+
   const monthStart = new Date();
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
@@ -214,11 +242,14 @@ const getTopProducts = asyncHandler(async (req, res) => {
     { $limit: 10 },
   ]);
 
-  res.status(200).json({
+  const topProductsData = {
     success: true,
     count: topProducts.length,
     topProducts,
-  });
+  };
+
+  setCache(cacheKey, topProductsData, 300); // 5 min cache
+  res.status(200).json(topProductsData);
 });
 
 // =============================================
@@ -228,30 +259,40 @@ const getTopProducts = asyncHandler(async (req, res) => {
 // registrations, reviews, support tickets
 // =============================================
 const getRecentActivity = asyncHandler(async (req, res) => {
+  const cacheKey = "admin:recent-activity";
+  const cached = getCache(cacheKey);
+  if (cached) {
+    return res.status(200).json(cached);
+  }
+
   const [recentOrders, recentUsers, recentReviews, recentTickets] = await Promise.all([
     Order.find()
       .populate("user", "name email")
       .sort("-createdAt")
       .limit(6)
-      .select("orderNumber orderStatus totalAmount user createdAt"),
+      .select("orderNumber orderStatus totalAmount user createdAt")
+      .lean(),
 
     User.find({ role: "customer" })
       .sort("-createdAt")
       .limit(5)
-      .select("name email createdAt"),
+      .select("name email createdAt")
+      .lean(),
 
     Review.find()
       .populate("user", "name")
       .populate("product", "name slug")
       .sort("-createdAt")
       .limit(5)
-      .select("rating comment isApproved user product createdAt"),
+      .select("rating comment isApproved user product createdAt")
+      .lean(),
 
     SupportTicket.find()
       .populate("user", "name")
       .sort("-createdAt")
       .limit(4)
-      .select("ticketNumber subject status priority user createdAt"),
+      .select("ticketNumber subject status priority user createdAt")
+      .lean(),
   ]);
 
   // ---- Merge and sort by date ----
@@ -292,11 +333,14 @@ const getRecentActivity = asyncHandler(async (req, res) => {
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     .slice(0, 20);
 
-  res.status(200).json({
+  const activityData = {
     success: true,
     count: activities.length,
     activities,
-  });
+  };
+
+  setCache(cacheKey, activityData, 300); // 5 min cache
+  res.status(200).json(activityData);
 });
 
 // =============================================

@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { FiHeart, FiShare2, FiMinus, FiPlus, FiStar, FiThumbsUp, FiCheck } from 'react-icons/fi';
-import { StarRating, Breadcrumb, LoadingSpinner, EmptyState } from '../../components/common/index.jsx';
+import { StarRating, Breadcrumb, LoadingSpinner, EmptyState, SEO } from '../../components/common/index.jsx';
 import ProductCard from '../../components/product/ProductCard';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
@@ -101,8 +101,38 @@ export default function ProductDetailPage() {
     }
   };
 
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": name,
+    "image": images?.map((i) => i.url) || [],
+    "description": description,
+    "sku": sku || undefined,
+    "offers": {
+      "@type": "Offer",
+      "url": window.location.href,
+      "priceCurrency": "INR",
+      "price": effectivePrice,
+      "itemCondition": "https://schema.org/NewCondition",
+      "availability": isInStock && stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+    },
+    "aggregateRating": ratings ? {
+      "@type": "AggregateRating",
+      "ratingValue": ratings,
+      "reviewCount": numReviews || 1
+    } : undefined
+  };
+
   return (
     <div>
+      <SEO 
+        title={name}
+        description={description || `${name} - Shop at Local Store.`}
+        ogImage={images?.[0]?.url}
+        ogType="product"
+        keywords={tags || [name, category?.name]}
+        schemaJson={productSchema}
+      />
       <Breadcrumb items={[
         { label: 'Home', href: '/' },
         { label: category?.name || 'Products', href: `/category/${category?.slug}` },

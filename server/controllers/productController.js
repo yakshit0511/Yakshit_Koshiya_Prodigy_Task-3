@@ -12,6 +12,7 @@ const Category = require("../models/Category");
 const { asyncHandler } = require("../middleware/errorHandler");
 const { deleteFromCloudinary } = require("../config/cloudinary");
 const ApiFeatures = require("../utils/apiFeatures");
+const { getCache, setCache, clearCachePattern } = require("../utils/cache");
 
 // =============================================
 // @route   GET /api/products
@@ -59,7 +60,7 @@ const getProducts = asyncHandler(async (req, res) => {
     .filter();
   const totalCount = await countFeatures.query.countDocuments();
 
-  const products = await features.query;
+  const products = await features.query.lean();
 
   res.status(200).json({
     success: true,
@@ -77,18 +78,28 @@ const getProducts = asyncHandler(async (req, res) => {
 // =============================================
 const getFeaturedProducts = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit, 10) || 8;
+  const cacheKey = `products:featured:${limit}`;
+  const cached = getCache(cacheKey);
+  if (cached) {
+    return res.status(200).json(cached);
+  }
 
   const products = await Product.find({ isFeatured: true, isActive: true })
     .populate("category", "name slug")
     .sort("-createdAt")
     .limit(limit)
-    .select("-__v");
+    .select("-__v")
+    .lean();
 
-  res.status(200).json({
+  const responseData = {
     success: true,
     count: products.length,
     products,
-  });
+  };
+
+  setCache(cacheKey, responseData, 300); // Cache for 5 minutes
+
+  res.status(200).json(responseData);
 });
 
 // =============================================
@@ -102,7 +113,8 @@ const getLowStockProducts = asyncHandler(async (req, res) => {
   })
     .populate("category", "name")
     .sort("stock")
-    .select("name sku stock lowStockThreshold images price");
+    .select("name sku stock lowStockThreshold images price")
+    .lean();
 
   res.status(200).json({
     success: true,
@@ -127,7 +139,7 @@ const getAllProductsAdmin = asyncHandler(async (req, res) => {
     .selectFields();
 
   const totalCount = await Product.countDocuments();
-  const products = await features.query;
+  const products = await features.query.lean();
 
   res.status(200).json({
     success: true,
@@ -150,7 +162,8 @@ const getProductBySlug = asyncHandler(async (req, res) => {
   })
     .populate("category", "name slug parentCategory")
     .populate("createdBy", "name")
-    .select("-__v");
+    .select("-__v")
+    .lean();
 
   if (!product) {
     res.status(404);
@@ -221,6 +234,8 @@ const createProduct = asyncHandler(async (req, res) => {
     isFeatured: isFeatured === "true" || isFeatured === true,
     createdBy: req.user._id,
   });
+
+  clearCachePattern("products:");
 
   res.status(201).json({
     success: true,
@@ -309,6 +324,8 @@ const updateProduct = asyncHandler(async (req, res) => {
 
   await product.save();
 
+  clearCachePattern("products:");
+
   res.status(200).json({
     success: true,
     message: "Product updated successfully.",
@@ -331,6 +348,8 @@ const deleteProduct = asyncHandler(async (req, res) => {
   product.isActive = false;
   await product.save();
 
+  clearCachePattern("products:");
+
   res.status(200).json({
     success: true,
     message: "Product has been deactivated successfully.",
@@ -350,6 +369,8 @@ const toggleFeatured = asyncHandler(async (req, res) => {
 
   product.isFeatured = !product.isFeatured;
   await product.save();
+
+  clearCachePattern("products:");
 
   res.status(200).json({
     success: true,

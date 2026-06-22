@@ -10,7 +10,9 @@
 
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const BlacklistedToken = require("../models/BlacklistedToken");
 const { asyncHandler } = require("../middleware/errorHandler");
 const { sendEmail } = require("../utils/sendEmail");
 const { deleteFromCloudinary } = require("../config/cloudinary");
@@ -124,9 +126,9 @@ const login = asyncHandler(async (req, res) => {
     throw new Error("Email and password are required.");
   }
 
-  // ---- Find user and explicitly select password (excluded by default) ----
+  // ---- Find user and explicitly select password and locking/tracking fields ----
   const user = await User.findOne({ email: email.toLowerCase() }).select(
-    "+password +refreshToken"
+    "+password +refreshToken failedLoginAttempts lockUntil lastLoginIP lastLoginAt"
   );
 
   if (!user) {
@@ -142,12 +144,59 @@ const login = asyncHandler(async (req, res) => {
     );
   }
 
+  // ---- Check if account is locked ----
+  const now = new Date();
+  if (user.lockUntil && user.lockUntil > now) {
+    res.status(403);
+    throw new Error(
+      `Your account is temporarily locked due to multiple failed login attempts. Please try again later.`
+    );
+  }
+
   // ---- Compare password ----
   const isMatch = await user.comparePassword(password);
   if (!isMatch) {
+    // If account was locked previously but lock duration passed, reset attempts
+    if (user.lockUntil && user.lockUntil <= now) {
+      user.failedLoginAttempts = 1;
+      user.lockUntil = null;
+    } else {
+      user.failedLoginAttempts += 1;
+    }
+
+    // Set lock if attempts reach 5
+    if (user.failedLoginAttempts >= 5) {
+      user.lockUntil = new Date(Date.now() + 30 * 60 * 1000); // Lock for 30 minutes
+    }
+
+    await user.save({ validateBeforeSave: false });
     res.status(401);
     throw new Error("Invalid email or password.");
   }
+
+  // ---- Success: Reset attempts and locks ----
+  const currentIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress || req.ip;
+
+  // Send security email if login IP changed
+  if (user.lastLoginIP && user.lastLoginIP !== currentIp) {
+    sendEmail({
+      to: user.email,
+      template: "securityAlert",
+      data: {
+        user,
+        alertDetails: {
+          title: "New Login IP Detected",
+          description: `A new login was detected from IP address: ${currentIp}. If this was you, no action is needed.`,
+        },
+      },
+    }).catch((err) => console.error("IP change login security alert email failed:", err.message));
+  }
+
+  // Update tracking fields
+  user.failedLoginAttempts = 0;
+  user.lockUntil = null;
+  user.lastLoginIP = currentIp;
+  user.lastLoginAt = now;
 
   // ---- Generate new tokens ----
   const accessToken = generateAccessToken(user._id);
@@ -181,6 +230,17 @@ const login = asyncHandler(async (req, res) => {
 // @access  Private
 // =============================================
 const logout = asyncHandler(async (req, res) => {
+  const token = req.cookies.refreshToken;
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+      const expiresAt = decoded.exp ? new Date(decoded.exp * 1000) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await BlacklistedToken.create({ token, expiresAt });
+    } catch (err) {
+      // Ignore token verification errors during logout, but still delete from DB
+    }
+  }
+
   // Clear the refresh token from DB to invalidate it
   await User.findByIdAndUpdate(req.user._id, {
     $unset: { refreshToken: "" },
@@ -207,16 +267,54 @@ const refreshToken = asyncHandler(async (req, res) => {
     throw new Error("No refresh token found. Please log in.");
   }
 
-  // ---- Verify refresh token ----
+  // ---- 1. Check if token is blacklisted (Token reuse detection) ----
+  const isBlacklisted = await BlacklistedToken.findOne({ token });
+  if (isBlacklisted) {
+    // Clear cookie
+    res.cookie("refreshToken", "", {
+      httpOnly: true,
+      expires: new Date(0),
+    });
+
+    // Revoke all sessions for this user
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+      const user = await User.findById(decoded.id);
+      if (user) {
+        user.refreshToken = undefined;
+        await user.save({ validateBeforeSave: false });
+
+        // Send alert email
+        await sendEmail({
+          to: user.email,
+          template: "securityAlert",
+          data: {
+            user,
+            alertDetails: {
+              title: "Compromised Session Detected",
+              description: "A refresh token from a previously rotated session was reused. For your security, we have terminated all active sessions on your account. If you did not perform this action, please reset your password immediately.",
+            },
+          },
+        }).catch((err) => console.error("RTR security email warning failed:", err.message));
+      }
+    } catch (err) {
+      console.error("Token reuse handling error:", err.message);
+    }
+
+    res.status(401);
+    throw new Error("Security Alert: Session has expired or has been compromised. Please log in again.");
+  }
+
+  // ---- 2. Verify refresh token ----
   let decoded;
   try {
     decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-  } catch {
+  } catch (err) {
     res.status(401);
     throw new Error("Invalid or expired refresh token. Please log in.");
   }
 
-  // ---- Find user and check stored refresh token matches ----
+  // ---- 3. Find user and check stored refresh token matches ----
   const user = await User.findById(decoded.id).select("+refreshToken");
   if (!user || user.refreshToken !== token) {
     res.status(401);
@@ -228,8 +326,22 @@ const refreshToken = asyncHandler(async (req, res) => {
     throw new Error("Account blocked. Contact support.");
   }
 
-  // ---- Issue new access token ----
+  // ---- 4. Rotate refresh token (RTR) ----
   const newAccessToken = generateAccessToken(user._id);
+  const newRefreshToken = generateRefreshToken(user._id);
+
+  // Blacklist the old refresh token
+  const expiresAt = decoded.exp ? new Date(decoded.exp * 1000) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  await BlacklistedToken.create({
+    token,
+    expiresAt,
+  });
+
+  // Update refresh token in DB
+  user.refreshToken = newRefreshToken;
+  await user.save({ validateBeforeSave: false });
+
+  sendRefreshTokenCookie(res, newRefreshToken);
 
   res.status(200).json({
     success: true,
@@ -405,14 +517,39 @@ const changePassword = asyncHandler(async (req, res) => {
     throw new Error("New password must be at least 6 characters.");
   }
 
-  // ---- Get user with password ----
-  const user = await User.findById(req.user._id).select("+password");
+  // ---- Get user with password and history ----
+  const user = await User.findById(req.user._id).select("+password passwordHistory");
 
   // ---- Verify current password ----
   const isMatch = await user.comparePassword(currentPassword);
   if (!isMatch) {
     res.status(401);
     throw new Error("Current password is incorrect.");
+  }
+
+  // ---- Prevent reusing current password ----
+  const isReusedCurrent = await user.comparePassword(newPassword);
+  if (isReusedCurrent) {
+    res.status(400);
+    throw new Error("New password cannot be the same as the current password.");
+  }
+
+  // ---- Prevent reusing any of the last 5 passwords ----
+  for (const oldHash of user.passwordHistory || []) {
+    const isReused = await bcrypt.compare(newPassword, oldHash);
+    if (isReused) {
+      res.status(400);
+      throw new Error("You cannot reuse any of your last 5 passwords.");
+    }
+  }
+
+  // ---- Add current password to history ----
+  if (!user.passwordHistory) {
+    user.passwordHistory = [];
+  }
+  user.passwordHistory.push(user.password);
+  if (user.passwordHistory.length > 5) {
+    user.passwordHistory.shift();
   }
 
   user.password = newPassword;

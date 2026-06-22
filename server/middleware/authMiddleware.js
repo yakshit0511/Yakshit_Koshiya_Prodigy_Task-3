@@ -11,6 +11,8 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { asyncHandler } = require("./errorHandler");
 
+const BlacklistedToken = require("../models/BlacklistedToken");
+
 /**
  * protect — Middleware that validates the JWT access token.
  * Attaches req.user on success, throws 401 on failure.
@@ -32,6 +34,13 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 
   try {
+    // Check if token is blacklisted
+    const isBlacklisted = await BlacklistedToken.findOne({ token });
+    if (isBlacklisted) {
+      res.status(401);
+      throw new Error("Session expired or token revoked. Please log in again.");
+    }
+
     // Verify token signature and expiry
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 

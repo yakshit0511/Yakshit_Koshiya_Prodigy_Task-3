@@ -1,0 +1,18 @@
+{
+  "name": "local-store-ecommerce-root",
+  "version": "1.0.0",
+  "description": "Root workspace to manage customer and admin dashboards of Local Store MERN app",
+  "main": "server/server.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server --prefix server\" \"npm run dev --prefix client\"",
+    "server": "nodemon server/server.js",
+    "client": "npm run dev --prefix client",
+    "build": "npm run build --prefix client",
+    "start": "node server/server.js",
+    "install-all": "npm install && npm install --prefix server && npm install --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.2"
+  }
+}

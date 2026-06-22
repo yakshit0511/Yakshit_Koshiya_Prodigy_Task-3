@@ -79,6 +79,27 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // ---- Account Hardening Fields ----
+    failedLoginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lockUntil: {
+      type: Date,
+      default: null,
+    },
+    passwordHistory: {
+      type: [String],
+      default: [],
+    },
+    lastLoginIP: {
+      type: String,
+      default: "",
+    },
+    lastLoginAt: {
+      type: Date,
+      default: null,
+    },
     // Wishlist: array of product _id references
     wishlist: [
       {

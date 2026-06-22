@@ -30,9 +30,15 @@ const mongoSanitize = require("express-mongo-sanitize");
 const xssClean = require("xss-clean");
 const hpp = require("hpp");
 const path = require("path");
+const compression = require("compression");
+const { v4: uuidv4 } = require("uuid");
+const morgan = require("morgan");
 
 // ---- 2. Database & Cloudinary ----
 const connectDB = require("./config/db");
+const initIndexes = require("./config/indexes");
+const logger = require("./utils/logger");
+const { generateSitemapXml } = require("./utils/generateSitemap");
 require("./config/cloudinary"); // Initialise Cloudinary v2 globally
 
 // ---- Route imports ----
@@ -56,8 +62,28 @@ const { notFound, errorHandler } = require("./middleware/errorHandler");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Request ID middleware
+app.use((req, res, next) => {
+  req.requestId = req.headers["x-request-id"] || uuidv4();
+  res.setHeader("x-request-id", req.requestId);
+  next();
+});
+
+// Winston HTTP Logger Stream via Morgan
+app.use(
+  morgan(
+    ':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent" - ReqID: :req[x-request-id]',
+    { stream: logger.stream }
+  )
+);
+
+// Compression middleware
+app.use(compression());
+
 // Connect to MongoDB Atlas
-connectDB();
+connectDB().then(() => {
+  initIndexes();
+});
 
 // =============================================
 // SECURITY MIDDLEWARE
@@ -65,11 +91,30 @@ connectDB();
 
 /**
  * Helmet — Sets security HTTP headers.
- * crossOriginResourcePolicy cross-origin allows Cloudinary images
- * to load inside <img> tags on a different origin.
+ * Configured with contentSecurityPolicy for Cloudinary and Razorpay,
+ * strict HSTS settings, and cross-origin controls.
  */
 app.use(
   helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "https://checkout.razorpay.com"],
+        frameSrc: ["'self'", "https://api.razorpay.com", "https://checkout.razorpay.com"],
+        imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+        connectSrc: ["'self'", "https://api.razorpay.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    hsts: {
+      maxAge: 63072000, // 2 years
+      includeSubDomains: true,
+      preload: true,
+    },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
     crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
@@ -101,9 +146,10 @@ app.use(
 );
 
 /**
- * Global rate-limiter — 100 requests / 15 min / IP.
- * Prevents abuse and DoS attacks on the API.
+ * RATE LIMITERS — Preventing abuse and securing API layers.
  */
+
+// Global rate-limiter — 100 requests / 15 min / IP
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -116,10 +162,7 @@ const globalLimiter = rateLimit({
 });
 app.use("/api", globalLimiter);
 
-/**
- * Strict rate-limiter for auth endpoints — 10 requests / 15 min / IP.
- * Guards against brute-force login, registration spam.
- */
+// Strict rate-limiter for auth endpoints — 10 requests / 15 min / IP
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -133,6 +176,59 @@ const authLimiter = rateLimit({
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/register", authLimiter);
 app.use("/api/auth/forgot-password", authLimiter);
+
+// Product endpoints rate-limiter — 200 requests / 15 min / IP
+const productLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many requests to search/view products. Try again later.",
+  },
+});
+app.use("/api/products", productLimiter);
+
+// Cart & Order actions rate-limiter — 50 requests / 15 min / IP
+const cartOrderLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many checkout or cart updates. Please try again later.",
+  },
+});
+app.use("/api/cart", cartOrderLimiter);
+app.use("/api/orders", cartOrderLimiter);
+
+// Admin dashboard and management rate-limiter — 150 requests / 15 min / IP
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 150,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many administrative requests. Try again later.",
+  },
+});
+app.use("/api/admin", adminLimiter);
+
+// Upload endpoints rate-limiter — 10 uploads / 15 min / IP
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many upload attempts. Try again later.",
+  },
+});
+app.use("/api/auth/update-profile", uploadLimiter);
 
 /**
  * Mongo Sanitize — Strip $ and . from user-supplied input.
@@ -179,6 +275,32 @@ app.get("/api/health", (req, res) => {
     environment: process.env.NODE_ENV,
     timestamp: new Date().toISOString(),
   });
+});
+
+// =============================================
+// SITEMAP & FRONTEND LOGS ROUTE
+// =============================================
+app.get("/sitemap.xml", async (req, res) => {
+  try {
+    const sitemap = await generateSitemapXml(process.env.CLIENT_URL || "http://localhost:5173");
+    res.header("Content-Type", "application/xml");
+    res.status(200).send(sitemap);
+  } catch (err) {
+    logger.error("Failed to generate sitemap.xml:", err);
+    res.status(500).end();
+  }
+});
+
+app.post("/api/logs/frontend-error", (req, res) => {
+  const { error, info, url, userAgent } = req.body;
+  logger.error("Frontend Exception caught:", {
+    error: error || "Unknown Error",
+    info: info || "No info",
+    url: url || "Unknown URL",
+    userAgent: userAgent || "Unknown User Agent",
+    requestId: req.requestId,
+  });
+  res.status(200).json({ success: true, message: "Error logged successfully" });
 });
 
 // =============================================

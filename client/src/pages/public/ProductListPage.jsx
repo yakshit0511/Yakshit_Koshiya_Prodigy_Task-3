@@ -5,8 +5,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { FiFilter, FiX, FiChevronDown, FiChevronUp, FiGrid, FiList } from 'react-icons/fi';
+import { FixedSizeList as List } from 'react-window';
 import ProductCard from '../../components/product/ProductCard';
-import { SkeletonCard, EmptyState, Pagination, Modal } from '../../components/common/index.jsx';
+import { SkeletonCard, EmptyState, Pagination, Modal, SEO } from '../../components/common/index.jsx';
 import { productApi, categoryApi } from '../../api/productApi';
 import { useDebounce } from '../../hooks/useDebounce';
 
@@ -158,6 +159,11 @@ export default function ProductListPage() {
 
   return (
     <div>
+      <SEO 
+        title={category ? `${categories.find(c => c._id === category)?.name || 'Category'} Products` : "Browse Products"}
+        description="Explore our wide range of products including organic vegetables, grocery essentials, dairy, and local neighborhood specials."
+        keywords={["shopping", "organic", "fresh produce", "online shopping"]}
+      />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800 }}>All Products</h1>
@@ -207,9 +213,24 @@ export default function ProductListPage() {
               action={<button onClick={clearAll} className="btn btn-primary">Clear Filters</button>}
             />
           ) : (
-            <div className={view === 'grid' ? 'products-grid' : ''} style={view === 'list' ? { display: 'flex', flexDirection: 'column', gap: 16 } : {}}>
-              {products.map((p) => <ProductCard key={p._id} product={p} />)}
-            </div>
+            view === 'list' ? (
+              <List
+                height={650}
+                itemCount={products.length}
+                itemSize={260}
+                width="100%"
+              >
+                {({ index, style }) => (
+                  <div style={{ ...style, paddingRight: 8 }}>
+                    <ProductCard product={products[index]} />
+                  </div>
+                )}
+              </List>
+            ) : (
+              <div className="products-grid">
+                {products.map((p) => <ProductCard key={p._id} product={p} />)}
+              </div>
+            )
           )}
           <Pagination page={page} totalPages={totalPages} onPageChange={(p) => update('page', p)} />
         </div>

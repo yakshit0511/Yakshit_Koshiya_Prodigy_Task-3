@@ -215,6 +215,23 @@ const templates = {
       <p style="color:#9ca3af;font-size:13px;">Please do not reply to this email. Use the ticket page to add more information.</p>
     `, "Ticket Acknowledgment"),
   }),
+
+  /** Security alert email (IP change or token reuse) */
+  securityAlert: (user, alertDetails) => ({
+    subject: `🚨 Security Alert: ${alertDetails.title} — Local Store`,
+    html: emailLayout(`
+      <h2>Security Alert! 🚨</h2>
+      <p>Hi <strong>${user.name}</strong>,</p>
+      <p>We detected unusual activity on your account:</p>
+      <div class="info-box" style="border-left-color: #dc2626;">
+        <p><strong>${alertDetails.title}</strong></p>
+        <p>${alertDetails.description}</p>
+        <p>⏰ Time: ${new Date().toLocaleString()}</p>
+      </div>
+      <p>If this was not you, please secure your account by resetting your password immediately.</p>
+      <a href="${process.env.CLIENT_URL}/forgot-password" class="btn" style="background: #dc2626; color: #ffffff !important;">Reset Password</a>
+    `, "Security Alert"),
+  }),
 };
 
 // =============================================

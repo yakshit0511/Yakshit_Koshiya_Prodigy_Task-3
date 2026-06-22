@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline — Local Store</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f3f4f6;
+      color: #374151;
+      text-align: center;
+    }
+    .container {
+      max-width: 450px;
+      padding: 30px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      color: #2563eb;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      color: #111827;
+    }
+    p {
+      font-size: 16px;
+      margin-bottom: 25px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background-color: #2563eb;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: background-color 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #1d4ed8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📶❌</div>
+    <h1>You are currently offline</h1>
+    <p>Please check your internet connection and try reloading the page. We will restore your shopping experience as soon as you reconnect.</p>
+    <button class="btn" onclick="window.location.reload()">Retry Connection</button>
+  </div>
+</body>
+</html>

@@ -11,12 +11,19 @@ const Category = require("../models/Category");
 const Product = require("../models/Product");
 const { asyncHandler } = require("../middleware/errorHandler");
 const { deleteFromCloudinary } = require("../config/cloudinary");
+const { getCache, setCache, clearCachePattern } = require("../utils/cache");
 
 // =============================================
 // @route   GET /api/categories
 // @access  Public
 // =============================================
 const getCategories = asyncHandler(async (req, res) => {
+  const cacheKey = "categories:active";
+  const cached = getCache(cacheKey);
+  if (cached) {
+    return res.status(200).json(cached);
+  }
+
   // Get top-level categories (no parent) and populate their subcategories
   const categories = await Category.find({
     parentCategory: null,
@@ -28,13 +35,18 @@ const getCategories = asyncHandler(async (req, res) => {
       select: "name slug image sortOrder",
     })
     .sort("sortOrder name")
-    .select("-__v");
+    .select("-__v")
+    .lean();
 
-  res.status(200).json({
+  const responseData = {
     success: true,
     count: categories.length,
     categories,
-  });
+  };
+
+  setCache(cacheKey, responseData, 300); // Cache for 5 minutes
+
+  res.status(200).json(responseData);
 });
 
 // =============================================
@@ -45,7 +57,8 @@ const getAllCategoriesAdmin = asyncHandler(async (req, res) => {
   const categories = await Category.find()
     .populate("parentCategory", "name slug")
     .sort("sortOrder name")
-    .select("-__v");
+    .select("-__v")
+    .lean();
 
   res.status(200).json({
     success: true,
@@ -69,7 +82,8 @@ const getCategoryBySlug = asyncHandler(async (req, res) => {
       match: { isActive: true },
       select: "name slug image",
     })
-    .select("-__v");
+    .select("-__v")
+    .lean();
 
   if (!category) {
     res.status(404);
@@ -85,7 +99,7 @@ const getCategoryBySlug = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     category: {
-      ...category.toObject(),
+      ...category,
       productCount,
     },
   });
@@ -127,6 +141,8 @@ const createCategory = asyncHandler(async (req, res) => {
     sortOrder: sortOrder ? Number(sortOrder) : 0,
     isActive: isActive !== undefined ? isActive : true,
   });
+
+  clearCachePattern("categories:");
 
   res.status(201).json({
     success: true,
@@ -170,6 +186,8 @@ const updateCategory = asyncHandler(async (req, res) => {
   }
 
   await category.save();
+
+  clearCachePattern("categories:");
 
   res.status(200).json({
     success: true,
@@ -220,6 +238,8 @@ const deleteCategory = asyncHandler(async (req, res) => {
   }
 
   await category.deleteOne();
+
+  clearCachePattern("categories:");
 
   res.status(200).json({
     success: true,

@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiChevronLeft, FiChevronRight, FiTruck, FiRefreshCw, FiLock, FiStar } from 'react-icons/fi';
 import ProductCard from '../../components/product/ProductCard';
-import { SkeletonCard } from '../../components/common/index.jsx';
+import { SkeletonCard, SEO } from '../../components/common/index.jsx';
 import { productApi, categoryApi } from '../../api/productApi';
 
 /* =========================================================
@@ -335,6 +335,18 @@ export default function HomePage() {
 
   return (
     <div style={{ marginTop: '-48px' /* pull hero under category bar */ }}>
+      <SEO 
+        title="Home" 
+        description="Shop fresh organic products, groceries and local specialties from your favorite neighborhood store with same-day delivery."
+        keywords={["organic", "groceries", "local store", "delivery", "fresh vegetables"]}
+        schemaJson={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Local Store",
+          "url": window.location.origin,
+          "description": "Your trusted neighborhood online store."
+        }}
+      />
       <HeroBanner />
 
       <CategoryGrid categories={categories} />

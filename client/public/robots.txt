@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /checkout
+Disallow: /profile
+Disallow: /admin
+
+Sitemap: http://localhost:5000/sitemap.xml

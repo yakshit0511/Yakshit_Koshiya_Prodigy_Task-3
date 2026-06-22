@@ -16,6 +16,7 @@ const User = require("../models/User");
 const { asyncHandler } = require("../middleware/errorHandler");
 const { sendEmail } = require("../utils/sendEmail");
 const generateInvoice = require("../utils/generateInvoice");
+const { clearCachePattern } = require("../utils/cache");
 
 // ---- Shipping config ----
 const FREE_SHIPPING_ABOVE = 500;
@@ -251,6 +252,7 @@ const _postOrderOperations = async (order, cart, userId) => {
     sendEmail({ to: user.email, template: "orderConfirmation", data: { user, order } })
       .catch((e) => console.error("Order email failed:", e.message));
   }
+  clearCachePattern("admin:");
 };
 
 // =============================================
@@ -424,6 +426,8 @@ const cancelOrder = asyncHandler(async (req, res) => {
       .catch((e) => console.error("Cancel email failed:", e.message));
   }
 
+  clearCachePattern("admin:");
+
   res.status(200).json({
     success: true,
     message: "Order cancelled. Stock has been restored.",
@@ -465,6 +469,8 @@ const requestReturn = asyncHandler(async (req, res) => {
     note: `Return reason: ${returnReason}`,
   });
   await order.save();
+
+  clearCachePattern("admin:");
 
   res.status(200).json({
     success: true,
@@ -624,6 +630,8 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
       .catch((e) => console.error("Status email failed:", e.message));
   }
 
+  clearCachePattern("admin:");
+
   res.status(200).json({
     success: true,
     message: `Order status updated to "${newStatus}".`,
@@ -653,6 +661,8 @@ const updatePaymentStatus = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Order not found.");
   }
+
+  clearCachePattern("admin:");
 
   res.status(200).json({
     success: true,
