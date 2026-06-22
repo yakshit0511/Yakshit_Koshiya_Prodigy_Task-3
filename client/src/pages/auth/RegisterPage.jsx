@@ -17,6 +17,14 @@ function getStrength(pwd) {
   return Math.min(s, 5);
 }
 
+const F = ({ name, form, setForm, fieldErrors, ...rest }) => (
+  <div className="form-group">
+    <label className="form-label">{rest.label} {rest.required && <span className="required">*</span>}</label>
+    <input className={`form-input ${fieldErrors[name] ? 'error' : ''}`} {...rest} value={form[name]} onChange={(e) => setForm(f => ({ ...f, [name]: e.target.value }))} />
+    {fieldErrors[name] && <p className="form-error">{fieldErrors[name]}</p>}
+  </div>
+);
+
 export default function RegisterPage() {
   const { register } = useAuth();
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '', agree: false });
@@ -49,14 +57,6 @@ export default function RegisterPage() {
     finally { setLoading(false); }
   };
 
-  const F = ({ name, ...rest }) => (
-    <div className="form-group">
-      <label className="form-label">{rest.label} {rest.required && <span className="required">*</span>}</label>
-      <input className={`form-input ${fieldErrors[name] ? 'error' : ''}`} {...rest} value={form[name]} onChange={(e) => setForm(f => ({ ...f, [name]: e.target.value }))} />
-      {fieldErrors[name] && <p className="form-error">{fieldErrors[name]}</p>}
-    </div>
-  );
-
   return (
     <div style={{ maxWidth: 480, margin: '0 auto' }}>
       <div className="card animate-slide-up">
@@ -70,9 +70,9 @@ export default function RegisterPage() {
           {error && <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: 8, padding: '12px 16px', marginBottom: 20, color: '#dc2626', fontSize: 14 }}>❌ {error}</div>}
 
           <form onSubmit={handleSubmit}>
-            <F name="name" label="Full Name" placeholder="Priya Sharma" required />
-            <F name="email" type="email" label="Email Address" placeholder="you@example.com" required />
-            <F name="phone" type="tel" label="Mobile Number" placeholder="9876543210" />
+            <F name="name" label="Full Name" placeholder="Priya Sharma" required form={form} setForm={setForm} fieldErrors={fieldErrors} />
+            <F name="email" type="email" label="Email Address" placeholder="you@example.com" required form={form} setForm={setForm} fieldErrors={fieldErrors} />
+            <F name="phone" type="tel" label="Mobile Number" placeholder="9876543210" form={form} setForm={setForm} fieldErrors={fieldErrors} />
 
             {/* Password with strength */}
             <div className="form-group">

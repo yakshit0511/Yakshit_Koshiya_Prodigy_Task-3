@@ -656,6 +656,7 @@ textarea.form-input { resize: vertical; min-height: 100px; }
   align-items: center;
   gap: var(--space-1);
   flex-shrink: 0;
+  margin-left: auto;
 }
 .navbar-action-btn {
   position: relative;
