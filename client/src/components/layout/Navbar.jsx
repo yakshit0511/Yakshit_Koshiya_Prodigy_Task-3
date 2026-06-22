@@ -11,10 +11,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FiSearch, FiShoppingCart, FiHeart, FiUser, FiLogOut, FiPackage, FiMessageSquare, FiSettings, FiHome, FiGrid } from 'react-icons/fi';
+import { FiSearch, FiShoppingCart, FiHeart, FiUser, FiLogOut, FiPackage, FiMessageSquare, FiSettings, FiHome, FiGrid, FiBell } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
+import { useNotifications } from '../../context/NotificationContext';
 import { useDebounce } from '../../hooks/useDebounce';
 import { productApi, categoryApi } from '../../api/productApi';
 
@@ -22,6 +23,7 @@ export default function Navbar() {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
+  const { notifications, unreadCount, markAllAsRead, markAsRead } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -31,12 +33,14 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const debouncedSearch = useDebounce(searchQuery, 400);
   const searchRef = useRef(null);
   const userMenuRef = useRef(null);
+  const notificationRef = useRef(null);
 
   /* ---- Sticky shadow ---- */
   useEffect(() => {
@@ -67,13 +71,18 @@ export default function Navbar() {
     const handler = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) setSearchOpen(false);
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false);
+      if (notificationRef.current && !notificationRef.current.contains(e.target)) setNotificationOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   /* ---- Close menu on route change ---- */
-  useEffect(() => { setMobileMenuOpen(false); setUserMenuOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setUserMenuOpen(false);
+    setNotificationOpen(false);
+  }, [location.pathname]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -173,6 +182,74 @@ export default function Navbar() {
               <FiShoppingCart />
               {cartCount > 0 && <span className="navbar-badge">{cartCount > 99 ? '99+' : cartCount}</span>}
             </Link>
+
+            {/* Notification Center */}
+            {isAuthenticated && (
+              <div className="user-dropdown" ref={notificationRef} style={{ position: 'relative' }}>
+                <button className="navbar-action-btn" onClick={() => setNotificationOpen((o) => !o)}>
+                  <FiBell />
+                  {unreadCount > 0 && <span className="navbar-badge">{unreadCount}</span>}
+                </button>
+                {notificationOpen && (
+                  <div className="user-dropdown-menu" style={{ width: 320, maxHeight: 420, overflowY: 'auto' }}>
+                    <div className="user-dropdown-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 700, fontSize: 14 }}>Notifications</span>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={markAllAsRead}
+                          style={{ color: 'var(--color-primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      {notifications.length === 0 ? (
+                        <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>
+                          No notifications yet
+                        </div>
+                      ) : (
+                        notifications.map((n) => (
+                          <div
+                            key={n.id}
+                            onClick={() => {
+                              markAsRead(n.id);
+                              if (n.type === 'order') {
+                                navigate(`/my-orders`);
+                              } else {
+                                navigate(`/support`);
+                              }
+                              setNotificationOpen(false);
+                            }}
+                            style={{
+                              padding: '12px 16px',
+                              borderBottom: '1px solid var(--color-border)',
+                              cursor: 'pointer',
+                              background: n.isRead ? 'transparent' : '#f0fdf4',
+                              transition: 'background var(--transition-fast)',
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = n.isRead ? 'transparent' : '#f0fdf4'; }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <span style={{ fontWeight: 600, fontSize: 13, color: n.isRead ? 'var(--color-text)' : 'var(--color-primary)' }}>
+                                {n.title}
+                              </span>
+                              <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>
+                                {new Date(n.date).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                              {n.message}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* User menu */}
             <div className="user-dropdown" ref={userMenuRef}>

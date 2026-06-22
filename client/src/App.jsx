@@ -5,13 +5,16 @@
  * - Admin routes: require admin role
  */
 
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import MobileBottomNav from './components/layout/MobileBottomNav';
+import CompareFloatingBar from './components/product/CompareFloatingBar';
 import { LoadingSpinner } from './components/common/index.jsx';
 import { useAuth } from './context/AuthContext';
+import ProtectedRoute from './components/layout/ProtectedRoute';
+import AdminRoute from './components/layout/AdminRoute';
 
 /* ---- Lazy-loaded pages ---- */
 const HomePage           = lazy(() => import('./pages/public/HomePage'));
@@ -54,23 +57,6 @@ const AdminSupportPage        = lazy(() => import('./pages/admin/AdminSupportPag
 const AdminSupportTicketPage  = lazy(() => import('./pages/admin/AdminSupportTicketPage'));
 
 /* ---- Route guards ---- */
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
-  const location = useLocation();
-  if (loading) return <LoadingSpinner fullPage />;
-  if (!isAuthenticated) return <Navigate to="/login" state={{ from: location }} replace />;
-  return children;
-};
-
-const AdminRoute = ({ children }) => {
-  const { isAuthenticated, isAdmin, loading } = useAuth();
-  const location = useLocation();
-  if (loading) return <LoadingSpinner fullPage />;
-  if (!isAuthenticated) return <Navigate to="/login" state={{ from: location }} replace />;
-  if (!isAdmin) return <Navigate to="/" replace />;
-  return children;
-};
-
 const GuestRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return <LoadingSpinner fullPage />;
@@ -89,6 +75,7 @@ const PublicLayout = ({ children }) => (
     </main>
     <Footer />
     <MobileBottomNav />
+    <CompareFloatingBar />
   </>
 );
 

@@ -18,6 +18,7 @@ export const productApi = {
 
 export const categoryApi = {
   getCategories: () => api.get('/categories'),
+  adminGetCategories: () => api.get('/categories/admin/all'),
   getCategoryBySlug: (slug) => api.get(`/categories/${slug}`),
   createCategory: (data) => api.post('/categories', data),
   updateCategory: (id, data) => api.put(`/categories/${id}`, data),

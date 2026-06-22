@@ -14,6 +14,7 @@ const {
   getTicketById,
   addReplyCustomer,
   closeTicket,
+  reopenTicket,
 } = require("../controllers/supportController");
 
 const { protect } = require("../middleware/authMiddleware");
@@ -27,5 +28,6 @@ router.get("/tickets", getMyTickets);
 router.get("/tickets/:ticketId", getTicketById);
 router.post("/tickets/:ticketId/reply", uploadSupportAttachments, addReplyCustomer);
 router.put("/tickets/:ticketId/close", closeTicket);
+router.put("/tickets/:ticketId/reopen", reopenTicket);
 
 module.exports = router;

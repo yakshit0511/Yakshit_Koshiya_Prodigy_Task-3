@@ -13,6 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import { productApi } from '../../api/productApi';
 import { reviewApi } from '../../api/reviewApi';
 import toast from 'react-hot-toast';
+import RecentlyViewed, { trackProductView } from '../../components/product/RecentlyViewed';
 
 export default function ProductDetailPage() {
   const { slug } = useParams();
@@ -43,6 +44,7 @@ export default function ProductDetailPage() {
         setProduct(p);
         // Fetch related & reviews
         if (p) {
+          trackProductView(p);
           productApi.getProducts({ category: p.category?._id, limit: 6, exclude: p._id })
             .then((rr) => setRelated(rr.data.products?.filter(pr => pr._id !== p._id) || []));
           setReviewsLoading(true);
@@ -319,6 +321,8 @@ export default function ProductDetailPage() {
           </div>
         </div>
       )}
+      
+      {product && <RecentlyViewed excludeId={product._id} />}
     </div>
   );
 }

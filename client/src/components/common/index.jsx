@@ -219,3 +219,10 @@ export const BackButton = () => {
     </button>
   );
 };
+
+// Re-exports
+export { default as StatsCard } from './StatsCard';
+export { default as StatusBadge } from './StatusBadge';
+export { default as AdminModal } from './AdminModal';
+export { default as ConfirmActionModal } from './ConfirmActionModal';
+export { default as DataTable } from './DataTable';

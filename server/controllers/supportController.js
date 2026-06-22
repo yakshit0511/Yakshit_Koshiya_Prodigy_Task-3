@@ -179,6 +179,32 @@ const closeTicket = asyncHandler(async (req, res) => {
   });
 });
 
+// @route   PUT /api/support/tickets/:ticketId/reopen
+// @access  Private (Customer)
+const reopenTicket = asyncHandler(async (req, res) => {
+  const ticket = await SupportTicket.findOne({
+    _id: req.params.ticketId,
+    user: req.user._id,
+  });
+  if (!ticket) {
+    res.status(404);
+    throw new Error("Ticket not found.");
+  }
+  if (ticket.status !== "Closed") {
+    res.status(400);
+    throw new Error("Ticket is not closed.");
+  }
+
+  ticket.status = "Open";
+  await ticket.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Ticket reopened successfully.",
+    ticket,
+  });
+});
+
 // =============================================
 // ---- ADMIN ROUTES ----
 // =============================================
@@ -249,16 +275,35 @@ const getTicketByIdAdmin = asyncHandler(async (req, res) => {
 // @route   PUT /api/admin/support/tickets/:ticketId/status
 // @access  Admin
 const updateTicketStatus = asyncHandler(async (req, res) => {
-  const { status } = req.body;
-  const valid = ["Open", "In Progress", "Resolved", "Closed"];
-  if (!status || !valid.includes(status)) {
+  const { status, priority } = req.body;
+  const updates = {};
+
+  if (status) {
+    const valid = ["Open", "In Progress", "Resolved", "Closed"];
+    if (!valid.includes(status)) {
+      res.status(400);
+      throw new Error(`status must be one of: ${valid.join(", ")}`);
+    }
+    updates.status = status;
+  }
+
+  if (priority) {
+    const validPriorities = ["Low", "Medium", "High", "Urgent"];
+    if (!validPriorities.includes(priority)) {
+      res.status(400);
+      throw new Error(`priority must be one of: ${validPriorities.join(", ")}`);
+    }
+    updates.priority = priority;
+  }
+
+  if (Object.keys(updates).length === 0) {
     res.status(400);
-    throw new Error(`status must be one of: ${valid.join(", ")}`);
+    throw new Error("Nothing to update. Provide status or priority.");
   }
 
   const ticket = await SupportTicket.findByIdAndUpdate(
     req.params.ticketId,
-    { status },
+    updates,
     { new: true }
   ).populate("user", "name email");
 
@@ -269,10 +314,11 @@ const updateTicketStatus = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    message: `Ticket status updated to "${status}".`,
+    message: "Ticket updated successfully.",
     ticket,
   });
 });
+
 
 // @route   POST /api/admin/support/tickets/:ticketId/reply
 // @access  Admin
@@ -334,6 +380,7 @@ module.exports = {
   getTicketById,
   addReplyCustomer,
   closeTicket,
+  reopenTicket,
   getAllTicketsAdmin,
   getTicketByIdAdmin,
   updateTicketStatus,

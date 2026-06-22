@@ -1,112 +1,289 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supportApi } from '../../api/supportApi';
 import AdminLayoutWrapper from '../../components/layout/AdminLayoutWrapper';
-import { LoadingSpinner, EmptyState, Badge } from '../../components/common/index.jsx';
+import DataTable from '../../components/common/DataTable';
+import StatusBadge from '../../components/common/StatusBadge';
+import StatsCard from '../../components/common/StatsCard';
+import { LoadingSpinner } from '../../components/common/index.jsx';
+import { FiMessageSquare, FiAlertCircle, FiCheckCircle, FiArchive, FiUser } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 
 export default function AdminSupportPage() {
+  const navigate = useNavigate();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [stats, setStats] = useState({ open: 0, inProgress: 0, resolved: 0, closed: 0 });
 
-  const fetchTickets = () => {
+  // Filter States
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [priority, setPriority] = useState('');
+  const [category, setCategory] = useState('');
+
+  const fetchTickets = async () => {
     setLoading(true);
-    const params = {};
-    if (statusFilter) params.status = statusFilter;
+    try {
+      const params = { limit: 1000 };
+      if (status) params.status = status;
+      if (priority) params.priority = priority;
+      if (category) params.category = category;
+      if (search) params.search = search;
 
-    supportApi.adminGetTickets(params)
-      .then((res) => setTickets(res.data.tickets || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  };
+      const res = await supportApi.adminGetTickets(params);
+      const ticketsList = res.data.tickets || [];
+      setTickets(ticketsList);
 
-  useEffect(() => {
-    fetchTickets();
-  }, [statusFilter]);
-
-  const getStatusVariant = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'open': return 'info';
-      case 'in progress': return 'warning';
-      case 'resolved':
-      case 'closed': return 'success';
-      default: return 'neutral';
+      // Compute statistics based on full fetch or separate calls
+      // To get accurate global stats, let's fetch all tickets
+      const allRes = await supportApi.adminGetTickets({ limit: 1000 });
+      const allTix = allRes.data.tickets || [];
+      const statsObj = {
+        open: allTix.filter(t => t.status === 'Open').length,
+        inProgress: allTix.filter(t => t.status === 'In Progress').length,
+        resolved: allTix.filter(t => t.status === 'Resolved').length,
+        closed: allTix.filter(t => t.status === 'Closed').length,
+      };
+      setStats(statsObj);
+    } catch (err) {
+      toast.error('Failed to load support tickets.');
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      fetchTickets();
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [search, status, priority, category]);
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setStatus('');
+    setPriority('');
+    setCategory('');
+  };
+
+  // Define columns for DataTable
+  const columns = [
+    {
+      header: 'Ticket Number',
+      key: 'ticketNumber',
+      render: (val) => (
+        <span style={{ fontFamily: 'monospace', fontWeight: 'bold', color: '#1e3a8a', fontSize: 13 }}>
+          #{val}
+        </span>
+      )
+    },
+    {
+      header: 'Customer',
+      key: 'user.name',
+      render: (val, row) => (
+        <div>
+          <div style={{ fontWeight: 600 }}>{row.user?.name || 'Customer'}</div>
+          <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>{row.user?.email || 'N/A'}</div>
+        </div>
+      )
+    },
+    {
+      header: 'Subject',
+      key: 'subject',
+      render: (val) => (
+        <span style={{ fontWeight: 500, color: 'var(--color-text)' }}>
+          {val}
+        </span>
+      )
+    },
+    {
+      header: 'Category',
+      key: 'category',
+      render: (val) => (
+        <span style={{ fontSize: 12, background: '#f1f5f9', padding: '4px 8px', borderRadius: 4, fontWeight: 500 }}>
+          {val}
+        </span>
+      )
+    },
+    {
+      header: 'Priority',
+      key: 'priority',
+      render: (val) => <StatusBadge status={val} />
+    },
+    {
+      header: 'Status',
+      key: 'status',
+      render: (val) => <StatusBadge status={val} />
+    },
+    {
+      header: 'Created',
+      key: 'createdAt',
+      render: (val) => (
+        <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+          {new Date(val).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+        </span>
+      )
+    },
+    {
+      header: 'Last Updated',
+      key: 'updatedAt',
+      render: (val) => (
+        <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+          {new Date(val).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+        </span>
+      )
+    },
+    {
+      header: 'Actions',
+      key: '_id',
+      sortable: false,
+      render: (val) => (
+        <button 
+          className="btn btn-outline btn-sm"
+          onClick={() => navigate(`/admin/support/${val}`)}
+          style={{ padding: '4px 10px', fontSize: 12 }}
+        >
+          Open Chat
+        </button>
+      )
+    }
+  ];
+
   return (
-    <AdminLayoutWrapper title="Customer Support Tickets">
-      {/* Tab Filters */}
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 24 }}>
-        <span style={{ fontSize: 14, fontWeight: 600 }}>Filter:</span>
-        {['', 'Open', 'In Progress', 'Resolved', 'Closed'].map((status) => (
-          <button
-            key={status}
-            onClick={() => setStatusFilter(status)}
-            className={`btn btn-sm ${statusFilter === status ? 'btn-primary' : 'btn-ghost'}`}
-          >
-            {status || 'All Tickets'}
-          </button>
-        ))}
+    <AdminLayoutWrapper title="Manage Customer Tickets">
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20, marginBottom: 30 }}>
+        <StatsCard
+          title="Open Tickets"
+          value={stats.open}
+          icon={<FiMessageSquare />}
+          color="#3b82f6"
+          loading={loading}
+        />
+        <StatsCard
+          title="In Progress"
+          value={stats.inProgress}
+          icon={<FiAlertCircle />}
+          color="#8b5cf6"
+          loading={loading}
+        />
+        <StatsCard
+          title="Resolved"
+          value={stats.resolved}
+          icon={<FiCheckCircle />}
+          color="#10b981"
+          loading={loading}
+        />
+        <StatsCard
+          title="Closed"
+          value={stats.closed}
+          icon={<FiArchive />}
+          color="#64748b"
+          loading={loading}
+        />
       </div>
 
-      {loading ? (
-        <LoadingSpinner fullPage />
-      ) : tickets.length === 0 ? (
-        <EmptyState
-          icon="💬"
-          title="No support tickets found"
-          description="Support tickets opened by store customers will appear here."
-        />
-      ) : (
-        <div style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ background: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)' }}>
-                  <th style={{ padding: '16px 20px', fontWeight: 700 }}>Ticket ID</th>
-                  <th style={{ padding: '16px 20px', fontWeight: 700 }}>Customer</th>
-                  <th style={{ padding: '16px 20px', fontWeight: 700 }}>Subject</th>
-                  <th style={{ padding: '16px 20px', fontWeight: 700 }}>Category</th>
-                  <th style={{ padding: '16px 20px', fontWeight: 700 }}>Priority</th>
-                  <th style={{ padding: '16px 20px', fontWeight: 700 }}>Status</th>
-                  <th style={{ padding: '16px 20px', fontWeight: 700 }}>Date Created</th>
-                  <th style={{ padding: '16px 20px', fontWeight: 700 }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tickets.map((t) => (
-                  <tr key={t._id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <td style={{ padding: '16px 20px', fontWeight: 600 }}>#{t._id.slice(-6).toUpperCase()}</td>
-                    <td style={{ padding: '16px 20px' }}>
-                      <div style={{ fontWeight: 700 }}>{t.user?.name || 'Customer'}</div>
-                      <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{t.user?.email}</div>
-                    </td>
-                    <td style={{ padding: '16px 20px' }}>{t.subject}</td>
-                    <td style={{ padding: '16px 20px' }}>{t.category}</td>
-                    <td style={{ padding: '16px 20px' }}>
-                      <Badge variant={t.priority === 'High' ? 'danger' : t.priority === 'Medium' ? 'warning' : 'neutral'}>
-                        {t.priority}
-                      </Badge>
-                    </td>
-                    <td style={{ padding: '16px 20px' }}>
-                      <Badge variant={getStatusVariant(t.status)}>{t.status}</Badge>
-                    </td>
-                    <td style={{ padding: '16px 20px', fontSize: 13, color: 'var(--color-text-secondary)' }}>
-                      {new Date(t.createdAt).toLocaleDateString('en-IN')}
-                    </td>
-                    <td style={{ padding: '16px 20px' }}>
-                      <Link to={`/admin/support/${t._id}`} className="btn btn-outline btn-sm">
-                        Open Ticket
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Advanced Filters */}
+      <div style={{
+        background: 'white',
+        border: '1px solid var(--color-border)',
+        borderRadius: 12,
+        padding: 20,
+        marginBottom: 24
+      }}>
+        <h3 style={{ margin: '0 0 16px 0', fontSize: 15, fontWeight: 700 }}>🔍 Filter Queue</h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 16
+        }}>
+          {/* Search */}
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label" style={{ fontSize: 12, fontWeight: 600 }}>Search Tickets</label>
+            <input
+              type="text"
+              className="form-input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="e.g. TKT-1002 or John Doe"
+              style={{ fontSize: 13 }}
+            />
+          </div>
+
+          {/* Status */}
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label" style={{ fontSize: 12, fontWeight: 600 }}>Status</label>
+            <select
+              className="form-input form-select"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              style={{ fontSize: 13 }}
+            >
+              <option value="">All Statuses</option>
+              <option value="Open">Open</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Resolved">Resolved</option>
+              <option value="Closed">Closed</option>
+            </select>
+          </div>
+
+          {/* Priority */}
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label" style={{ fontSize: 12, fontWeight: 600 }}>Priority</label>
+            <select
+              className="form-input form-select"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+              style={{ fontSize: 13 }}
+            >
+              <option value="">All Priorities</option>
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+              <option value="Urgent">Urgent</option>
+            </select>
+          </div>
+
+          {/* Category */}
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label" style={{ fontSize: 12, fontWeight: 600 }}>Category</label>
+            <select
+              className="form-input form-select"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              style={{ fontSize: 13 }}
+            >
+              <option value="">All Categories</option>
+              <option value="Order Issue">Order Issue</option>
+              <option value="Payment Issue">Payment Issue</option>
+              <option value="Product Issue">Product Issue</option>
+              <option value="Delivery Issue">Delivery Issue</option>
+              <option value="Return Request">Return Request</option>
+              <option value="General Inquiry">General Inquiry</option>
+            </select>
           </div>
         </div>
-      )}
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+          <button 
+            className="btn btn-ghost" 
+            onClick={handleResetFilters}
+            style={{ border: '1px solid var(--color-border)', padding: '8px 16px', fontSize: 13 }}
+          >
+            Reset Filters
+          </button>
+        </div>
+      </div>
+
+      {/* Tickets DataTable */}
+      <DataTable
+        columns={columns}
+        data={tickets}
+        loading={loading}
+        searchPlaceholder="Locally filter tickets in memory..."
+        searchKey={['ticketNumber', 'subject', 'user.name', 'user.email']}
+        exportFilename="support_tickets_export.csv"
+      />
     </AdminLayoutWrapper>
   );
 }

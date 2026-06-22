@@ -1,210 +1,295 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { supportApi } from '../../api/reviewApi'; // Wait, supportApi is in reviewApi.js or our new supportApi.js. We created supportApi.js in api folder! Let's import from '../../api/supportApi'!
-import { Breadcrumb, LoadingSpinner, EmptyState, Badge, Modal } from '../../components/common/index.jsx';
+import { supportApi } from '../../api/supportApi';
+import { orderApi } from '../../api/orderApi';
+import CustomerLayoutWrapper from '../../components/layout/CustomerLayoutWrapper';
+import { LoadingSpinner, EmptyState, StatusBadge } from '../../components/common/index.jsx';
 import toast from 'react-hot-toast';
+import { FiPlus, FiPaperclip, FiArrowRight, FiFileText } from 'react-icons/fi';
 
 export default function SupportPage() {
   const [tickets, setTickets] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
 
   // Form State
   const [subject, setSubject] = useState('');
-  const [category, setCategory] = useState('Product Query');
+  const [category, setCategory] = useState('General Inquiry');
   const [priority, setPriority] = useState('Medium');
-  const [description, setDescription] = useState('');
-  const [attachment, setAttachment] = useState(null);
+  const [relatedOrderId, setRelatedOrderId] = useState('');
+  const [message, setMessage] = useState('');
+  const [attachments, setAttachments] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  const fetchTickets = () => {
-    supportApi.getMyTickets()
-      .then((res) => setTickets(res.data.tickets || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+  const fetchTicketsAndOrders = async () => {
+    try {
+      const ticketRes = await supportApi.getMyTickets();
+      setTickets(ticketRes.data.tickets || []);
+      
+      const orderRes = await orderApi.getMyOrders();
+      setOrders(orderRes.data.orders || []);
+    } catch (_) {
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchTickets();
+    fetchTicketsAndOrders();
   }, []);
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length + attachments.length > 3) {
+      toast.error('You can upload a maximum of 3 attachments');
+      return;
+    }
+    setAttachments([...attachments, ...files]);
+  };
+
+  const removeAttachment = (idx) => {
+    setAttachments(attachments.filter((_, i) => i !== idx));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!subject.trim() || !description.trim()) {
-      toast.error('Subject and description are required');
+    if (!subject.trim() || !message.trim()) {
+      toast.error('Subject and message are required');
       return;
     }
     setSubmitLoading(true);
+
     try {
       const fd = new FormData();
-      fd.append('subject', subject);
+      fd.append('subject', subject.trim());
       fd.append('category', category);
       fd.append('priority', priority);
-      fd.append('description', description);
-      if (attachment) {
-        fd.append('attachment', attachment); // Wait, name in backend might be attachment or media, let's verify if needed. In supportController.js it's probably attachment.
+      fd.append('message', message.trim());
+      if (relatedOrderId) {
+        fd.append('relatedOrderId', relatedOrderId);
       }
+      attachments.forEach((file) => {
+        fd.append('attachments', file);
+      });
+
       await supportApi.createTicket(fd);
-      toast.success('Support ticket created successfully!');
-      setModalOpen(false);
+      toast.success('Ticket submitted successfully! 🎟️');
+      
+      // Reset form
       setSubject('');
-      setDescription('');
-      setAttachment(null);
-      fetchTickets();
+      setCategory('General Inquiry');
+      setPriority('Medium');
+      setRelatedOrderId('');
+      setMessage('');
+      setAttachments([]);
+
+      fetchTicketsAndOrders();
     } catch (err) {
-      toast.error(err.message || 'Failed to create support ticket');
+      toast.error(err.message || 'Failed to submit support ticket');
     } finally {
       setSubmitLoading(false);
     }
   };
 
-  const getStatusVariant = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'open': return 'info';
-      case 'in progress': return 'warning';
-      case 'resolved':
-      case 'closed': return 'success';
-      default: return 'neutral';
+  const getPriorityColor = (p) => {
+    switch (p) {
+      case 'Low': return { bg: '#f3f4f6', color: '#4b5563' };
+      case 'Medium': return { bg: '#dbeafe', color: '#1d4ed8' };
+      case 'High': return { bg: '#ffedd5', color: '#ea580c' };
+      case 'Urgent': return { bg: '#fee2e2', color: '#dc2626' };
+      default: return { bg: '#f3f4f6', color: '#4b5563' };
     }
   };
 
   return (
-    <div>
-      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Support Tickets' }]} />
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800 }}>💬 Support Tickets</h1>
-        <button className="btn btn-primary" onClick={() => setModalOpen(true)}>
-          ➕ New Support Ticket
-        </button>
-      </div>
-
+    <CustomerLayoutWrapper title="💬 Support Tickets">
       {loading ? (
-        <LoadingSpinner fullPage />
-      ) : tickets.length === 0 ? (
-        <EmptyState
-          icon="💬"
-          title="No support tickets"
-          description="Have questions or issues? Create a support ticket and our team will assist you."
-          action={
-            <button className="btn btn-primary" onClick={() => setModalOpen(true)}>
-              Create First Ticket
-            </button>
-          }
-        />
+        <LoadingSpinner />
       ) : (
-        <div style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ background: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)' }}>
-                  <th style={{ padding: '16px 20px', fontWeight: 700 }}>Ticket ID</th>
-                  <th style={{ padding: '16px 20px', fontWeight: 700 }}>Subject</th>
-                  <th style={{ padding: '16px 20px', fontWeight: 700 }}>Category</th>
-                  <th style={{ padding: '16px 20px', fontWeight: 700 }}>Priority</th>
-                  <th style={{ padding: '16px 20px', fontWeight: 700 }}>Status</th>
-                  <th style={{ padding: '16px 20px', fontWeight: 700 }}>Created Date</th>
-                  <th style={{ padding: '16px 20px', fontWeight: 700 }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tickets.map((t) => (
-                  <tr key={t._id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <td style={{ padding: '16px 20px', fontWeight: 600 }}>#{t._id.slice(-6).toUpperCase()}</td>
-                    <td style={{ padding: '16px 20px' }}>{t.subject}</td>
-                    <td style={{ padding: '16px 20px' }}>{t.category}</td>
-                    <td style={{ padding: '16px 20px' }}>
-                      <Badge variant={t.priority === 'High' ? 'danger' : t.priority === 'Medium' ? 'warning' : 'neutral'}>
-                        {t.priority}
-                      </Badge>
-                    </td>
-                    <td style={{ padding: '16px 20px' }}>
-                      <Badge variant={getStatusVariant(t.status)}>{t.status}</Badge>
-                    </td>
-                    <td style={{ padding: '16px 20px', fontSize: 13, color: 'var(--color-text-secondary)' }}>
-                      {new Date(t.createdAt).toLocaleDateString('en-IN')}
-                    </td>
-                    <td style={{ padding: '16px 20px' }}>
-                      <Link to={`/support/${t._id}`} className="btn btn-ghost btn-sm" style={{ color: 'var(--color-primary)' }}>
-                        View Conversation
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', lgDirection: 'row', gridTemplateColumns: '1fr 1.2fr', gap: 32 }}>
+          {/* Left Side: Create Ticket Form */}
+          <div className="card" style={{ padding: 24, alignSelf: 'flex-start' }}>
+            <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Create New Ticket</h2>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label className="form-label">Subject <span style={{ color: 'var(--color-error)' }}>*</span></label>
+                <input
+                  className="form-input"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Summarise your issue briefly..."
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="form-group">
+                  <label className="form-label">Category</label>
+                  <select
+                    className="form-input form-select"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
+                    <option value="General Inquiry">General Inquiry</option>
+                    <option value="Order Issue">Order Issue</option>
+                    <option value="Payment Issue">Payment Issue</option>
+                    <option value="Product Issue">Product Issue</option>
+                    <option value="Delivery Issue">Delivery Issue</option>
+                    <option value="Return Request">Return Request</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Priority</label>
+                  <select
+                    className="form-input form-select"
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Urgent">Urgent</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Related Order (if any) */}
+              <div className="form-group">
+                <label className="form-label">Related Order (optional)</label>
+                <select
+                  className="form-input form-select"
+                  value={relatedOrderId}
+                  onChange={(e) => setRelatedOrderId(e.target.value)}
+                >
+                  <option value="">None / Not Applicable</option>
+                  {orders.map((o) => (
+                    <option key={o._id} value={o._id}>
+                      Order #{o.orderNumber || o._id.slice(-8).toUpperCase()} (₹{o.totalAmount})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Message / Description <span style={{ color: 'var(--color-error)' }}>*</span></label>
+                <textarea
+                  className="form-input"
+                  rows={4}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Provide all details, order details, issue description..."
+                  required
+                />
+              </div>
+
+              {/* Attachments */}
+              <div className="form-group">
+                <label className="form-label">Attach Files (optional, max 3)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('ticket-files').click()}
+                    className="btn btn-outline btn-sm"
+                    disabled={attachments.length >= 3}
+                  >
+                    <FiPaperclip /> Attach Files
+                  </button>
+                  <input
+                    type="file"
+                    id="ticket-files"
+                    style={{ display: 'none' }}
+                    multiple
+                    accept="image/*,application/pdf"
+                    onChange={handleFileChange}
+                  />
+                  <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                    Images & PDFs only (Max 5MB)
+                  </span>
+                </div>
+
+                {attachments.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                    {attachments.map((file, idx) => (
+                      <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: '#f1f5f9', border: '1px solid var(--color-border)', borderRadius: 6, fontSize: 12 }}>
+                        <span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</span>
+                        <button type="button" onClick={() => removeAttachment(idx)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button type="submit" className="btn btn-primary btn-full" disabled={submitLoading}>
+                {submitLoading ? 'Submitting ticket...' : 'Submit Ticket 🎟️'}
+              </button>
+            </form>
+          </div>
+
+          {/* Right Side: My Tickets List */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 -4px 0' }}>My Support History</h2>
+            {tickets.length === 0 ? (
+              <EmptyState
+                icon="💬"
+                title="No support tickets found"
+                description="Your submitted tickets will appear here for review."
+              />
+            ) : (
+              tickets.map((t) => {
+                const priorityColor = getPriorityColor(t.priority);
+                return (
+                  <div
+                    key={t._id}
+                    className="card"
+                    style={{
+                      padding: 20,
+                      boxShadow: 'var(--shadow-sm)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                      <span style={{ fontWeight: 800, fontSize: 15 }}>Ticket #{t.ticketNumber || t._id.slice(-6).toUpperCase()}</span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 12, background: priorityColor.bg, color: priorityColor.color }}>
+                          {t.priority}
+                        </span>
+                        <StatusBadge status={t.status} />
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)' }}>
+                      {t.subject}
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, borderTop: '1px solid #f1f5f9', paddingTop: 12, fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                      <div>
+                        Category: <strong>{t.category}</strong>
+                        {t.relatedOrder && (
+                          <span style={{ marginLeft: 8 }}>
+                            • Order: <strong>#{t.relatedOrder?.orderNumber || t.relatedOrder?._id?.slice(-8).toUpperCase()}</strong>
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+                        Updated: {new Date(t.updatedAt).toLocaleDateString('en-IN')}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+                      <Link to={`/support/${t._id}`} className="btn btn-ghost btn-sm" style={{ color: 'var(--color-primary)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        View Conversation <FiArrowRight />
                       </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       )}
-
-      {/* New Ticket Modal */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Create New Support Ticket" width={500}>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Subject <span style={{ color: 'var(--color-error)' }}>*</span></label>
-            <input
-              className="form-input"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="E.g., Missing item from Order #1002"
-              required
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div className="form-group">
-              <label className="form-label">Category</label>
-              <select className="form-input form-select" value={category} onChange={(e) => setCategory(e.target.value)}>
-                <option value="Order Issue">Order Issue</option>
-                <option value="Payment Issue">Payment Issue</option>
-                <option value="Product Query">Product Query</option>
-                <option value="Delivery Issue">Delivery Issue</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Priority</label>
-              <select className="form-input form-select" value={priority} onChange={(e) => setPriority(e.target.value)}>
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Description <span style={{ color: 'var(--color-error)' }}>*</span></label>
-            <textarea
-              className="form-input"
-              rows={4}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe your issue in detail..."
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Attachment (Optional)</label>
-            <input
-              type="file"
-              className="form-input"
-              accept="image/*,application/pdf"
-              onChange={(e) => setAttachment(e.target.files[0])}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
-            <button type="button" className="btn btn-ghost" onClick={() => setModalOpen(false)} disabled={submitLoading}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={submitLoading}>
-              {submitLoading ? 'Submitting...' : 'Submit Support Ticket'}
-            </button>
-          </div>
-        </form>
-      </Modal>
-    </div>
+    </CustomerLayoutWrapper>
   );
 }
