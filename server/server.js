@@ -137,8 +137,13 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow Postman / mobile apps (no origin header) and whitelisted origins
-      if (!origin || allowedOrigins.includes(origin) || origin.startsWith("http://localhost:")) {
+      // Allow Postman / mobile apps (no origin header), whitelisted origins, and Vercel deployments
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        origin.startsWith("http://localhost:") ||
+        origin.endsWith(".vercel.app")
+      ) {
         callback(null, true);
       } else {
         callback(new Error(`CORS: origin "${origin}" is not allowed.`));
