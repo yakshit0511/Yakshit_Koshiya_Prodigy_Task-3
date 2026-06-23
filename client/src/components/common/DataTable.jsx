@@ -182,11 +182,11 @@ export default function DataTable({
       ) : sortedData.length === 0 ? (
         <EmptyState icon="🔍" title="No matching records" description="Try clearing search query or filter parameters." />
       ) : (
-        <div style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
             <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--color-border)' }}>
+                <tr style={{ background: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)' }}>
                   {onSelectionChange && (
                     <th style={{ padding: '16px 20px', width: 40 }}>
                       <input

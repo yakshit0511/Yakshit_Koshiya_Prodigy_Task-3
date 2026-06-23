@@ -38,7 +38,7 @@ export default function OrderSuccessPage() {
 
       {/* Brief item summary */}
       {order?.items?.length > 0 && (
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--color-border)', padding: 20, marginBottom: 28, textAlign: 'left' }}>
+        <div style={{ background: 'var(--color-surface)', borderRadius: 12, border: '1px solid var(--color-border)', padding: 20, marginBottom: 28, textAlign: 'left' }}>
           <h3 style={{ fontWeight: 700, marginBottom: 12, fontSize: 15 }}>Your Order:</h3>
           {order.items.map((item, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 6 }}>

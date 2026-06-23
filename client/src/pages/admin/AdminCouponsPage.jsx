@@ -164,11 +164,11 @@ export default function AdminCouponsPage() {
               fontFamily: 'monospace', 
               fontWeight: 'bold', 
               fontSize: 14, 
-              background: '#f1f5f9', 
+              background: 'var(--color-bg)', 
               padding: '4px 10px', 
               borderRadius: 6,
-              color: isMuted ? '#94a3b8' : '#312e81',
-              border: '1px solid #cbd5e1',
+              color: isMuted ? 'var(--color-text-muted)' : 'var(--color-accent)',
+              border: '1px solid var(--color-border)',
               textDecoration: status === 'expired' ? 'line-through' : 'none'
             }}
           >

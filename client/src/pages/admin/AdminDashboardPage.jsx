@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { adminApi } from '../../api/adminApi';
 import { orderApi } from '../../api/orderApi';
 import { productApi } from '../../api/productApi';
@@ -33,35 +33,56 @@ export default function AdminDashboardPage() {
   const [editStockVal, setEditStockVal] = useState(0);
   const [stockLoading, setStockLoading] = useState(false);
 
+  // Ref guard: prevent duplicate toast in React Strict Mode (double useEffect calls)
+  const hasShownError = useRef(false);
+
   const fetchDashboardData = async () => {
-    try {
-      const [statsRes, chartRes, recentRes, orderStatsRes] = await Promise.all([
-        adminApi.getDashboardStats(),
-        adminApi.getRevenueChart(),
-        adminApi.getRecentActivity(),
-        orderApi.adminGetStats(),
-      ]);
+    // Use allSettled so one failed endpoint doesn't block the rest
+    const [statsRes, chartRes, recentRes, orderStatsRes, productRes] = await Promise.allSettled([
+      adminApi.getDashboardStats(),
+      adminApi.getRevenueChart(),
+      adminApi.getRecentActivity(),
+      orderApi.adminGetStats(),
+      productApi.adminGetProducts({ limit: 100 }),
+    ]);
 
-      setStats(statsRes.data.stats || null);
-      setDailyChart(chartRes.data.daily || []);
-      setMonthlyChart(chartRes.data.monthly || []);
-      setRecent(recentRes.data.activities || []);
-      setOrderStats(orderStatsRes.data.stats || null);
-      setTopProducts(orderStatsRes.data.topProducts || []);
+    let anyFailed = false;
 
-      // Fetch all products to filter low stock items in frontend
-      const productRes = await productApi.adminGetProducts({ limit: 100 });
-      const allProd = productRes.data.products || [];
+    if (statsRes.status === 'fulfilled') {
+      setStats(statsRes.value.data.stats || null);
+    } else { anyFailed = true; }
+
+    if (chartRes.status === 'fulfilled') {
+      setDailyChart(chartRes.value.data.daily || []);
+      setMonthlyChart(chartRes.value.data.monthly || []);
+    } else { anyFailed = true; }
+
+    if (recentRes.status === 'fulfilled') {
+      setRecent(recentRes.value.data.activities || []);
+    } else { anyFailed = true; }
+
+    if (orderStatsRes.status === 'fulfilled') {
+      setOrderStats(orderStatsRes.value.data.stats || null);
+      setTopProducts(orderStatsRes.value.data.topProducts || []);
+    } else { anyFailed = true; }
+
+    if (productRes.status === 'fulfilled') {
+      const allProd = productRes.value.data.products || [];
       const lowStock = allProd.filter(p => p.stock <= (p.lowStockThreshold || 5));
-      setLowStockProducts(lowStock.slice(0, 8)); // Top 8 low stock products
-    } catch (err) {
-      toast.error('Failed to load dashboard metrics');
-    } finally {
-      setLoading(false);
+      setLowStockProducts(lowStock.slice(0, 8));
+    } else { anyFailed = true; }
+
+    // Show toast only once even if multiple endpoints fail
+    if (anyFailed && !hasShownError.current) {
+      hasShownError.current = true;
+      toast.error('Some dashboard metrics failed to load. Please refresh.');
     }
+
+    setLoading(false);
   };
 
   useEffect(() => {
+    hasShownError.current = false; // reset on mount
     fetchDashboardData();
   }, []);
 
@@ -202,7 +223,7 @@ export default function AdminDashboardPage() {
             <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>📈 Sales & Revenue Statistics</h3>
             
             {/* Timeframe toggle buttons */}
-            <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', padding: 4, borderRadius: 8 }}>
+            <div style={{ display: 'flex', gap: 4, background: 'var(--color-bg)', padding: 4, borderRadius: 8 }}>
               {['7d', '30d', '12m'].map((time) => (
                 <button
                   key={time}
@@ -212,7 +233,7 @@ export default function AdminDashboardPage() {
                     borderRadius: 6,
                     fontSize: 12,
                     fontWeight: 700,
-                    background: revenueTimeframe === time ? 'white' : 'transparent',
+                    background: revenueTimeframe === time ? 'var(--color-surface)' : 'transparent',
                     color: revenueTimeframe === time ? 'var(--color-primary)' : 'var(--color-text-secondary)',
                     boxShadow: revenueTimeframe === time ? 'var(--shadow-sm)' : 'none',
                     transition: 'all 0.2s',
@@ -379,7 +400,7 @@ export default function AdminDashboardPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 270, overflowY: 'auto' }}>
             {recent.map((act, idx) => (
               <div key={idx} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <span style={{ fontSize: 16, background: '#f1f5f9', padding: 6, borderRadius: '50%', display: 'inline-flex' }}>{act.icon}</span>
+                <span style={{ fontSize: 16, background: 'var(--color-bg)', padding: 6, borderRadius: '50%', display: 'inline-flex' }}>{act.icon}</span>
                 <div style={{ minWidth: 0 }}>
                   <p style={{ fontSize: 12, color: 'var(--color-text)', margin: 0, lineHeight: 1.4 }}>{act.message}</p>
                   <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>
@@ -410,7 +431,7 @@ export default function AdminDashboardPage() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
                 <thead>
-                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--color-border)' }}>
+                  <tr style={{ background: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)' }}>
                     <th style={{ padding: 12, fontWeight: 700 }}>Product Name</th>
                     <th style={{ padding: 12, fontWeight: 700, textAlign: 'center' }}>Current Stock</th>
                     <th style={{ padding: 12, fontWeight: 700, textAlign: 'center' }}>Threshold</th>

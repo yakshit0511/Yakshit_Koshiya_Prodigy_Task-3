@@ -155,7 +155,7 @@ export default function AddressesPage() {
             <div
               key={addr._id}
               style={{
-                background: 'white',
+                background: 'var(--color-surface)',
                 border: addr.isDefault ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
                 borderRadius: 16,
                 padding: 20,
@@ -182,7 +182,7 @@ export default function AddressesPage() {
                     {getLabelIcon(addr.label)} {addr.label}
                   </span>
                   {addr.isDefault && (
-                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-success)', background: '#dcfce7', padding: '3px 8px', borderRadius: 12 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--badge-success-color, var(--color-success))', background: 'var(--badge-success-bg, #dcfce7)', padding: '3px 8px', borderRadius: 12 }}>
                       Default
                     </span>
                   )}

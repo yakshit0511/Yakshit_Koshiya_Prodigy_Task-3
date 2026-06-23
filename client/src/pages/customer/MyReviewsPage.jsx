@@ -121,7 +121,7 @@ export default function MyReviewsPage() {
               <div
                 key={review._id}
                 style={{
-                  background: 'white',
+                  background: 'var(--color-surface)',
                   border: '1px solid var(--color-border)',
                   borderRadius: 16,
                   padding: 20,

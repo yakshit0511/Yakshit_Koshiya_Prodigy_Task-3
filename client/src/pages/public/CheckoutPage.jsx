@@ -163,7 +163,7 @@ export default function CheckoutPage() {
               <div className="card-header"><h3 className="card-title">📍 Select Delivery Address</h3></div>
               <div className="card-body">
                 {addresses.map((addr) => (
-                  <div key={addr._id} onClick={() => setSelectedAddr(addr._id)} style={{ border: `2px solid ${selectedAddr === addr._id ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 10, padding: 16, marginBottom: 12, cursor: 'pointer', transition: 'all 0.2s', background: selectedAddr === addr._id ? 'var(--color-primary-light)' : 'white' }}>
+                  <div key={addr._id} onClick={() => setSelectedAddr(addr._id)} style={{ border: `2px solid ${selectedAddr === addr._id ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 10, padding: 16, marginBottom: 12, cursor: 'pointer', transition: 'all 0.2s', background: selectedAddr === addr._id ? 'var(--color-primary-light)' : 'var(--color-surface)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontWeight: 700, fontSize: 13, background: selectedAddr === addr._id ? 'var(--color-primary)' : 'var(--color-border)', color: selectedAddr === addr._id ? 'white' : 'var(--color-text-secondary)', padding: '2px 8px', borderRadius: 4 }}>{addr.label}</span>
                       {selectedAddr === addr._id && <FiCheck color="var(--color-primary)" />}
@@ -221,7 +221,7 @@ export default function CheckoutPage() {
                   { id: 'COD', icon: '💵', title: 'Cash on Delivery', desc: 'Pay when your order arrives. No extra charges.' },
                   { id: 'Razorpay', icon: '💳', title: 'Online Payment', desc: 'Pay securely using UPI, Cards or Net Banking via Razorpay.' },
                 ].map((p) => (
-                  <div key={p.id} onClick={() => setPayment(p.id)} style={{ border: `2px solid ${payment === p.id ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 10, padding: 16, marginBottom: 12, cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'flex-start', background: payment === p.id ? 'var(--color-primary-light)' : 'white', transition: 'all 0.2s' }}>
+                  <div key={p.id} onClick={() => setPayment(p.id)} style={{ border: `2px solid ${payment === p.id ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 10, padding: 16, marginBottom: 12, cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'flex-start', background: payment === p.id ? 'var(--color-primary-light)' : 'var(--color-surface)', transition: 'all 0.2s' }}>
                     <span style={{ fontSize: 28 }}>{p.icon}</span>
                     <div>
                       <div style={{ fontWeight: 700 }}>{p.title}</div>

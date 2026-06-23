@@ -378,7 +378,7 @@ export default function AdminEditProductPage() {
                 <label className="form-label">Existing Images (first is main):</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
                   {existingImages.map((img, idx) => (
-                    <div key={img.publicId} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, border: '1px solid var(--color-border)', borderRadius: 8, background: '#f8fafc' }}>
+                    <div key={img.publicId} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, border: '1px solid var(--color-border)', borderRadius: 8, background: 'var(--color-bg)' }}>
                       <img src={img.url} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }} />
                       <div style={{ flex: 1, fontSize: 12, fontWeight: idx === 0 ? 800 : 500, color: idx === 0 ? 'var(--color-primary)' : 'var(--color-text)' }}>
                         {idx === 0 ? '🏆 Main Image' : `Image ${idx + 1}`}
@@ -403,7 +403,7 @@ export default function AdminEditProductPage() {
                 padding: '24px 16px',
                 textAlign: 'center',
                 cursor: 'pointer',
-                background: '#f8fafc',
+                background: 'var(--color-bg)',
                 transition: 'border-color var(--transition-fast)',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)'; }}
@@ -427,7 +427,7 @@ export default function AdminEditProductPage() {
                 <label className="form-label">Newly Selected Images:</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
                   {newPreviews.map((src, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, border: '1px solid var(--color-border)', borderRadius: 8, background: '#f8fafc' }}>
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, border: '1px solid var(--color-border)', borderRadius: 8, background: 'var(--color-bg)' }}>
                       <img src={src} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }} />
                       <span style={{ flex: 1, fontSize: 12 }}>New Image {idx + 1}</span>
                       <button type="button" onClick={() => handleRemoveNewImage(idx)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer', padding: 4, fontWeight: 'bold' }}>✕</button>

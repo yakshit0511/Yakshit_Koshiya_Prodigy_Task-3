@@ -149,7 +149,7 @@ export default function ProductListPage() {
               position: 'absolute', inset: 0, background: inStock ? 'var(--color-primary)' : '#cbd5e1',
               borderRadius: 11, transition: '0.2s', cursor: 'pointer',
             }}>
-              <span style={{ position: 'absolute', left: inStock ? 20 : 2, top: 2, width: 18, height: 18, background: 'white', borderRadius: '50%', transition: '0.2s' }} />
+              <span style={{ position: 'absolute', left: inStock ? 20 : 2, top: 2, width: 18, height: 18, background: 'var(--color-surface)', borderRadius: '50%', transition: '0.2s' }} />
             </span>
           </label>
         </div>

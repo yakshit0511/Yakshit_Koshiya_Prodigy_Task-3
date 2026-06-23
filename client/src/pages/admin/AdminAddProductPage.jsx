@@ -349,7 +349,7 @@ export default function AdminAddProductPage() {
                 padding: '24px 16px',
                 textAlign: 'center',
                 cursor: 'pointer',
-                background: '#f8fafc',
+                background: 'var(--color-bg)',
                 transition: 'border-color var(--transition-fast)',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)'; }}
@@ -374,7 +374,7 @@ export default function AdminAddProductPage() {
                 <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: 'var(--color-text-secondary)' }}>Selected Previews (first image is main):</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {imagePreviews.map((src, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, border: '1px solid var(--color-border)', borderRadius: 8, background: '#f8fafc' }}>
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, border: '1px solid var(--color-border)', borderRadius: 8, background: 'var(--color-bg)' }}>
                       <img src={src} alt="Preview" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 4 }} />
                       <div style={{ flex: 1, fontSize: 12, fontWeight: idx === 0 ? 800 : 500, color: idx === 0 ? 'var(--color-primary)' : 'var(--color-text)' }}>
                         {idx === 0 ? '🏆 Main Image' : `Image ${idx + 1}`}

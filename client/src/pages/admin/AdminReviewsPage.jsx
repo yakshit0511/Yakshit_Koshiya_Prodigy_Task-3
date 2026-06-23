@@ -126,10 +126,10 @@ export default function AdminReviewsPage() {
             <img 
               src={row.product.images[0].url} 
               alt={val} 
-              style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', border: '1px solid #e2e8f0' }} 
+              style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', border: '1px solid var(--color-border)' }} 
             />
           ) : (
-            <div style={{ width: 36, height: 36, borderRadius: 6, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 6, background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>
               <FiShoppingBag size={16} />
             </div>
           )}
@@ -167,8 +167,8 @@ export default function AdminReviewsPage() {
               display: 'inline-flex', 
               alignItems: 'center', 
               gap: 4, 
-              color: '#15803d', 
-              background: '#f0fdf4', 
+              color: 'var(--badge-success-color, #15803d)', 
+              background: 'var(--badge-success-bg, #f0fdf4)', 
               fontSize: 10, 
               padding: '2px 6px', 
               borderRadius: 4, 
@@ -181,13 +181,13 @@ export default function AdminReviewsPage() {
 
           {row.adminReply && (
             <div style={{ 
-              background: '#f8fafc', 
+              background: 'var(--color-bg)', 
               borderLeft: '3px solid var(--color-primary)', 
               padding: '6px 10px', 
               marginTop: 8, 
               fontSize: 11, 
               borderRadius: '0 6px 6px 0', 
-              color: '#334155' 
+              color: 'var(--color-text)' 
             }}>
               <strong>Reply:</strong> {row.adminReply}
             </div>

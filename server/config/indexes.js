@@ -3,11 +3,14 @@
  * -----------------------------------------
  * Database Index Initialiser.
  *
- * Configures optimal indices for MongoDB Atlas:
- *  - Uniqueness constraints (email, slug, sku, orderNumber)
- *  - Compound indices (isActive/isFeatured, user/createdAt)
- *  - Range query support (price, stock)
- *  - Compound text index for full-text search (name, description, tags)
+ * All index DEFINITIONS live in the model schema files.
+ * This file only calls syncIndexes() to ensure the live
+ * MongoDB collections match the schema definitions.
+ *
+ * NOTE: If you change a text index (weights, name) in a model,
+ * you must first manually drop the old index in MongoDB Atlas:
+ *   db.products.dropIndex("name_text_description_text_tags_text")
+ * Then restart the server to let Mongoose create the new one.
  * -----------------------------------------
  */
 
@@ -18,58 +21,31 @@ const Review = require("../models/Review");
 const logger = require("../utils/logger");
 
 /**
- * initIndexes — Ensures all schemas have defined indices and
- * synchronises them with the remote MongoDB collections.
+ * initIndexes — Synchronises schema indexes with MongoDB.
+ * Does NOT re-declare indexes here — that caused duplicate
+ * index warnings because models already define their own indexes.
  */
 const initIndexes = async () => {
-  try {
-    logger.info("Configuring MongoDB indexes...");
+  // Sync each model individually so one failure doesn't block others
+  const models = [
+    { name: "User", model: User },
+    { name: "Product", model: Product },
+    { name: "Order", model: Order },
+    { name: "Review", model: Review },
+  ];
 
-    // 1. User Indices
-    User.schema.index({ email: 1 }, { unique: true });
-    User.schema.index({ createdAt: -1 });
-
-    // 2. Product Indices
-    Product.schema.index({ slug: 1 }, { unique: true });
-    Product.schema.index({ sku: 1 }, { unique: true });
-    Product.schema.index({ category: 1 });
-    Product.schema.index({ isActive: 1, isFeatured: 1 });
-    Product.schema.index({ price: 1 });
-    Product.schema.index({ ratings: -1 });
-    Product.schema.index({ stock: 1 });
-    
-    // Full-Text Search: Combined compound text index (Max 1 text index per collection)
-    Product.schema.index(
-      { name: "text", description: "text", tags: "text" },
-      { 
-        weights: { name: 10, tags: 5, description: 1 },
-        name: "ProductTextSearchIndex"
-      }
-    );
-
-    // 3. Order Indices
-    Order.schema.index({ orderNumber: 1 }, { unique: true });
-    Order.schema.index({ user: 1 });
-    Order.schema.index({ orderStatus: 1 });
-    Order.schema.index({ createdAt: -1 });
-    Order.schema.index({ user: 1, createdAt: -1 });
-
-    // 4. Review Indices
-    Review.schema.index({ product: 1, user: 1 }, { unique: true });
-    Review.schema.index({ product: 1, isApproved: 1 });
-    Review.schema.index({ createdAt: -1 });
-
-    // Sync all indexes with the live database collections
-    await Promise.all([
-      User.syncIndexes(),
-      Product.syncIndexes(),
-      Order.syncIndexes(),
-      Review.syncIndexes()
-    ]);
-
-    logger.info("⚡ MongoDB Database indexes synchronized successfully!");
-  } catch (error) {
-    logger.error("❌ Failed to synchronize MongoDB indexes: " + error.message);
+  for (const { name, model } of models) {
+    try {
+      await model.syncIndexes();
+      logger.info(`✅ Indexes synced: ${name}`);
+    } catch (err) {
+      // Text index conflicts happen when weights/names differ from existing index.
+      // This is non-fatal — the old index still works for search.
+      // To fix permanently: drop the old index in MongoDB Atlas, then restart.
+      logger.warn(
+        `⚠️  Index sync warning for ${name} (non-fatal): ${err.message}`
+      );
+    }
   }
 };
 

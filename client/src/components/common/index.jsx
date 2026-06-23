@@ -86,7 +86,7 @@ export const StarRating = ({ rating = 0, count, size = 14, showNumber = false })
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
       {stars.map((s) => (
-        <span key={s} style={{ color: s <= Math.round(rating) ? '#f59e0b' : '#d1d5db', fontSize: size, lineHeight: 1 }}>★</span>
+        <span key={s} style={{ color: s <= Math.round(rating) ? '#f59e0b' : 'var(--color-border-hover)', fontSize: size, lineHeight: 1 }}>★</span>
       ))}
       {showNumber && <span style={{ fontSize: size - 2, color: 'var(--color-text-muted)', marginLeft: 2 }}>{rating.toFixed(1)}</span>}
       {count !== undefined && <span style={{ fontSize: size - 2, color: 'var(--color-text-muted)' }}>({count})</span>}
@@ -102,7 +102,7 @@ export const StarRatingInput = ({ value = 0, onChange }) => {
       {[1,2,3,4,5].map((s) => (
         <span
           key={s}
-          style={{ fontSize: 28, color: s <= (hovered || value) ? '#f59e0b' : '#d1d5db', transition: 'color 0.1s' }}
+          style={{ fontSize: 28, color: s <= (hovered || value) ? '#f59e0b' : 'var(--color-border-hover)', transition: 'color 0.1s' }}
           onClick={() => onChange(s)}
           onMouseEnter={() => setHovered(s)}
           onMouseLeave={() => setHovered(0)}
@@ -173,7 +173,7 @@ export const Modal = ({ isOpen, onClose, title, children, width = 520 }) => {
         onClick={(e) => e.stopPropagation()}
         className="animate-scale-in"
         style={{
-          position: 'relative', background: 'white', borderRadius: 'var(--radius-xl)',
+          position: 'relative', background: 'var(--color-surface)', borderRadius: 'var(--radius-xl)',
           width: '100%', maxWidth: width, maxHeight: '90vh', overflow: 'auto',
           boxShadow: 'var(--shadow-xl)',
         }}

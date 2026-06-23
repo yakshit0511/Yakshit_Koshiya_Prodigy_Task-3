@@ -100,7 +100,7 @@ export default function AdminSupportPage() {
       header: 'Category',
       key: 'category',
       render: (val) => (
-        <span style={{ fontSize: 12, background: '#f1f5f9', padding: '4px 8px', borderRadius: 4, fontWeight: 500 }}>
+        <span style={{ fontSize: 12, background: 'var(--color-bg)', padding: '4px 8px', borderRadius: 4, fontWeight: 500 }}>
           {val}
         </span>
       )
@@ -185,7 +185,7 @@ export default function AdminSupportPage() {
 
       {/* Advanced Filters */}
       <div style={{
-        background: 'white',
+        background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
         borderRadius: 12,
         padding: 20,

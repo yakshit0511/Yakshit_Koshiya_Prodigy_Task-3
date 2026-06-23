@@ -195,7 +195,7 @@ export default function AdminCategoriesPage() {
       {loading ? (
         <LoadingSpinner fullPage />
       ) : (
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--color-border)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--color-surface)', borderRadius: 12, border: '1px solid var(--color-border)', overflow: 'hidden' }}>
           <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ background: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)' }}>
@@ -239,7 +239,7 @@ export default function AdminCategoriesPage() {
                             {parent.image?.url ? (
                               <img src={parent.image.url} alt={parent.name} style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover' }} />
                             ) : (
-                              <div style={{ width: 36, height: 36, borderRadius: 6, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+                              <div style={{ width: 36, height: 36, borderRadius: 6, background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>
                                 <FiFolder size={18} />
                               </div>
                             )}
@@ -352,7 +352,7 @@ export default function AdminCategoriesPage() {
               value={slug}
               readOnly
               disabled
-              style={{ width: '100%', boxSizing: 'border-box', background: '#f1f5f9', cursor: 'not-allowed' }}
+              style={{ width: '100%', boxSizing: 'border-box', background: 'var(--color-bg)', cursor: 'not-allowed', opacity: 0.7 }}
             />
           </div>
 
@@ -406,14 +406,14 @@ export default function AdminCategoriesPage() {
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center',
-                  background: '#f8fafc',
+                  background: 'var(--color-bg)',
                   overflow: 'hidden'
                 }}
               >
                 {imagePreview ? (
                   <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <FiImage size={24} style={{ color: '#94a3b8' }} />
+                  <FiImage size={24} style={{ color: 'var(--color-text-muted)' }} />
                 )}
               </div>
               <div>

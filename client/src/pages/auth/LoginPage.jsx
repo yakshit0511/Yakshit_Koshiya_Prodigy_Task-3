@@ -30,7 +30,7 @@ export default function LoginPage() {
             <p style={{ color: 'var(--color-text-secondary)', fontSize: 14, marginTop: 4 }}>Sign in to your LocalStore account</p>
           </div>
 
-          {error && <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: 8, padding: '12px 16px', marginBottom: 20, color: '#dc2626', fontSize: 14 }}>❌ {error}</div>}
+          {error && <div style={{ background: 'var(--badge-error-bg, #fee2e2)', border: '1px solid var(--color-error)', borderRadius: 8, padding: '12px 16px', marginBottom: 20, color: 'var(--badge-error-color, #dc2626)', fontSize: 14 }}>❌ {error}</div>}
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">

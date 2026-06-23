@@ -33,7 +33,7 @@ export default function ResetPasswordPage() {
             <h1 style={{ fontSize: 24, fontWeight: 800 }}>Reset Password</h1>
             <p style={{ color: 'var(--color-text-secondary)', fontSize: 14 }}>Enter your new password</p>
           </div>
-          {error && <div style={{ background: '#fee2e2', borderRadius: 8, padding: '12px 16px', marginBottom: 20, color: '#dc2626', fontSize: 14 }}>{error}</div>}
+          {error && <div style={{ background: 'var(--badge-error-bg, #fee2e2)', borderRadius: 8, padding: '12px 16px', marginBottom: 20, color: 'var(--badge-error-color, #dc2626)', fontSize: 14 }}>{error}</div>}
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label className="form-label">New Password</label>

@@ -84,7 +84,7 @@ export default function WishlistPage() {
             return (
               <div key={product._id} className="product-card-container" style={{
                 position: 'relative',
-                background: 'white',
+                background: 'var(--color-surface)',
                 border: '1px solid var(--color-border)',
                 borderRadius: 'var(--radius-lg)',
                 overflow: 'hidden',

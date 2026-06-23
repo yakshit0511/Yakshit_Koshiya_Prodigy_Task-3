@@ -132,7 +132,7 @@ export default function AdminOrdersPage() {
       header: 'Method',
       key: 'paymentMethod',
       render: (val) => (
-        <span style={{ fontSize: 12, fontWeight: 600, background: '#f1f5f9', padding: '4px 8px', borderRadius: 4 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, background: 'var(--color-bg)', padding: '4px 8px', borderRadius: 4 }}>
           {val}
         </span>
       ),
@@ -209,7 +209,7 @@ export default function AdminOrdersPage() {
       {/* Advanced Filters Card */}
       <div 
         style={{ 
-          background: 'white', 
+          background: 'var(--color-surface)', 
           border: '1px solid var(--color-border)', 
           borderRadius: 12, 
           padding: 20, 

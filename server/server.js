@@ -126,14 +126,19 @@ app.use(
  */
 const allowedOrigins = [
   process.env.CLIENT_URL || "http://localhost:5173",
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "http://localhost:5176",
   "http://localhost:3000", // CRA fallback
+  "http://localhost:3001",
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow Postman / mobile apps (no origin header) and whitelisted origins
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin) || origin.startsWith("http://localhost:")) {
         callback(null, true);
       } else {
         callback(new Error(`CORS: origin "${origin}" is not allowed.`));
@@ -149,10 +154,12 @@ app.use(
  * RATE LIMITERS — Preventing abuse and securing API layers.
  */
 
+const isDev = process.env.NODE_ENV === "development";
+
 // Global rate-limiter — 100 requests / 15 min / IP
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: isDev ? 10000 : 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -165,7 +172,7 @@ app.use("/api", globalLimiter);
 // Strict rate-limiter for auth endpoints — 10 requests / 15 min / IP
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: isDev ? 1000 : 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -180,7 +187,7 @@ app.use("/api/auth/forgot-password", authLimiter);
 // Product endpoints rate-limiter — 200 requests / 15 min / IP
 const productLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: isDev ? 20000 : 200,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -193,7 +200,7 @@ app.use("/api/products", productLimiter);
 // Cart & Order actions rate-limiter — 50 requests / 15 min / IP
 const cartOrderLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 50,
+  max: isDev ? 5000 : 50,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -207,7 +214,7 @@ app.use("/api/orders", cartOrderLimiter);
 // Admin dashboard and management rate-limiter — 150 requests / 15 min / IP
 const adminLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 150,
+  max: isDev ? 15000 : 150,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -220,7 +227,7 @@ app.use("/api/admin", adminLimiter);
 // Upload endpoints rate-limiter — 10 uploads / 15 min / IP
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: isDev ? 1000 : 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: {

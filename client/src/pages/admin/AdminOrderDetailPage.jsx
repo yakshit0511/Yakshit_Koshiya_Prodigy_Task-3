@@ -130,7 +130,7 @@ export default function AdminOrderDetailPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           
           {/* Order Items Snapshot Card */}
-          <div style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
             <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px 0', borderBottom: '1px solid var(--color-border)', paddingBottom: 12 }}>
               📦 Order Items
             </h2>
@@ -142,14 +142,14 @@ export default function AdminOrderDetailPage() {
                     display: 'flex', 
                     gap: 16, 
                     alignItems: 'center', 
-                    borderBottom: idx === order.items.length - 1 ? 'none' : '1px solid #f1f5f9', 
+                    borderBottom: idx === order.items.length - 1 ? 'none' : '1px solid var(--color-border)', 
                     paddingBottom: idx === order.items.length - 1 ? 0 : 16 
                   }}
                 >
                   <img
                     src={item.productImage || 'https://via.placeholder.com/60x60?text=Product'}
                     alt={item.productName}
-                    style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }}
+                    style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--color-border)' }}
                   />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, color: 'var(--color-text)' }}>
@@ -167,7 +167,7 @@ export default function AdminOrderDetailPage() {
             </div>
 
             {/* Price Calculations */}
-            <div style={{ marginTop: 24, borderTop: '2px solid #f1f5f9', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 350, marginLeft: 'auto' }}>
+            <div style={{ marginTop: 24, borderTop: '2px solid var(--color-border)', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 350, marginLeft: 'auto' }}>
               <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 14 }}>
                 <span style={{ color: 'var(--color-text-secondary)' }}>Subtotal:</span>
                 <span style={{ fontWeight: 600 }}>₹{order.subtotal?.toLocaleString('en-IN')}</span>
@@ -196,7 +196,7 @@ export default function AdminOrderDetailPage() {
           </div>
 
           {/* Delivery & Shipping Snapshot Card */}
-          <div style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
             <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px 0', borderBottom: '1px solid var(--color-border)', paddingBottom: 12 }}>
               <FiMapPin style={{ marginRight: 6 }} /> Shipping Details
             </h2>
@@ -229,7 +229,7 @@ export default function AdminOrderDetailPage() {
           </div>
 
           {/* Status History Timeline */}
-          <div style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
             <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px 0', borderBottom: '1px solid var(--color-border)', paddingBottom: 12 }}>
               ⏳ Status Logs
             </h2>
@@ -239,7 +239,7 @@ export default function AdminOrderDetailPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#4f46e5', border: '3px solid #e0e7ff', marginTop: 4 }} />
                     {idx !== order.statusHistory.length - 1 && (
-                      <div style={{ width: 2, height: 40, background: '#e2e8f0', margin: '4px 0' }} />
+                      <div style={{ width: 2, height: 40, background: 'var(--color-border)', margin: '4px 0' }} />
                     )}
                   </div>
                   <div style={{ flex: 1 }}>
@@ -250,7 +250,7 @@ export default function AdminOrderDetailPage() {
                       </span>
                     </div>
                     {log.note && (
-                      <p style={{ margin: '6px 0 0 0', background: '#f8fafc', padding: 8, borderRadius: 6, fontSize: 13, color: '#475569', borderLeft: '3px solid #cbd5e1' }}>
+                      <p style={{ margin: '6px 0 0 0', background: 'var(--color-bg)', padding: 8, borderRadius: 6, fontSize: 13, color: 'var(--color-text-secondary)', borderLeft: '3px solid var(--color-border)' }}>
                         Note: {log.note}
                       </p>
                     )}
@@ -265,11 +265,10 @@ export default function AdminOrderDetailPage() {
         {/* Right Side: Admin Updates Drawer */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           
-          {/* Prominent Order Status update card */}
-          <div style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 16px 0' }}>📦 Order Status Manager</h2>
             
-            <div style={{ background: '#f8fafc', padding: 16, borderRadius: 10, marginBottom: 20 }}>
+            <div style={{ background: 'var(--color-bg)', padding: 16, borderRadius: 10, marginBottom: 20 }}>
               <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
                 Current Status
               </div>
@@ -280,10 +279,10 @@ export default function AdminOrderDetailPage() {
                 <StatusBadge status={order.orderStatus} />
               </div>
             </div>
-
+ 
             {/* Next logical action stepper button */}
             {nextStatus && (
-              <div style={{ marginBottom: 20, borderBottom: '1px solid #f1f5f9', paddingBottom: 20 }}>
+              <div style={{ marginBottom: 20, borderBottom: '1px solid var(--color-border)', paddingBottom: 20 }}>
                 <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 8 }}>
                   Recommended Next Action
                 </div>
@@ -344,7 +343,7 @@ export default function AdminOrderDetailPage() {
           </div>
 
           {/* Payment Status Manager card */}
-          <div style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 16px 0' }}>💳 Payment Manager</h2>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -382,13 +381,12 @@ export default function AdminOrderDetailPage() {
             </button>
           </div>
 
-          {/* Customer Profile Link Card */}
-          <div style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 16px 0' }}>👤 Customer Info</h2>
             {order.user ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4f46e5', fontWeight: 'bold' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--color-primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)', fontWeight: 'bold' }}>
                     {order.user.name?.charAt(0).toUpperCase()}
                   </div>
                   <div>
@@ -396,15 +394,15 @@ export default function AdminOrderDetailPage() {
                     <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Registered User</div>
                   </div>
                 </div>
-
-                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
+ 
+                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <FiMail style={{ color: '#94a3b8' }} />
-                    <span style={{ color: '#334155' }}>{order.user.email}</span>
+                    <FiMail style={{ color: 'var(--color-text-muted)' }} />
+                    <span style={{ color: 'var(--color-text)' }}>{order.user.email}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <FiPhone style={{ color: '#94a3b8' }} />
-                    <span style={{ color: '#334155' }}>{order.user.phone || 'No phone registered'}</span>
+                    <FiPhone style={{ color: 'var(--color-text-muted)' }} />
+                    <span style={{ color: 'var(--color-text)' }}>{order.user.phone || 'No phone registered'}</span>
                   </div>
                 </div>
 

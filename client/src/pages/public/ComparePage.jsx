@@ -30,10 +30,10 @@ export default function ComparePage() {
           }
         />
       ) : (
-        <div style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
             <thead>
-              <tr style={{ borderBottom: '2px solid var(--color-border)', background: '#f8fafc' }}>
+              <tr style={{ borderBottom: '2px solid var(--color-border)', background: 'var(--color-bg)' }}>
                 <th style={{ padding: '24px 20px', width: '25%', fontWeight: 700, color: 'var(--color-text-secondary)' }}>
                   Attributes
                 </th>

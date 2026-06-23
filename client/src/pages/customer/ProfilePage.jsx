@@ -221,7 +221,7 @@ export default function ProfilePage() {
 
             {/* Spent/Orders Stats Row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, borderTop: '1px solid var(--color-border)', paddingTop: 24, marginTop: 12 }}>
-              <div style={{ background: '#f8fafc', padding: 16, borderRadius: 12, display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ background: 'var(--color-bg)', padding: 16, borderRadius: 12, display: 'flex', alignItems: 'center', gap: 16 }}>
                 <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--color-primary-light)', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
                   <FiShoppingBag />
                 </div>
@@ -230,7 +230,7 @@ export default function ProfilePage() {
                   <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', fontWeight: 500 }}>Total Orders</div>
                 </div>
               </div>
-              <div style={{ background: '#f8fafc', padding: 16, borderRadius: 12, display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ background: 'var(--color-bg)', padding: 16, borderRadius: 12, display: 'flex', alignItems: 'center', gap: 16 }}>
                 <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--color-secondary-light)', color: 'var(--color-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
                   <FiDollarSign />
                 </div>
@@ -289,7 +289,7 @@ export default function ProfilePage() {
                       <span style={{ color: 'var(--color-text-secondary)' }}>Password Strength:</span>
                       <span style={{ fontWeight: 600, color: strength.color }}>{strength.text}</span>
                     </div>
-                    <div style={{ height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ height: 6, background: 'var(--color-border)', borderRadius: 3, overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${(strength.score / 4) * 100}%`, background: strength.color, transition: 'width 0.3s ease' }} />
                     </div>
                   </div>

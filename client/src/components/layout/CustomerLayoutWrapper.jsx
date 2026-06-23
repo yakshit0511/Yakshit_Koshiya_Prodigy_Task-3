@@ -23,7 +23,7 @@ export default function CustomerLayoutWrapper({ children, title }) {
       <div className="customer-dashboard-layout" style={{ display: 'flex', gap: 32, marginTop: 16 }}>
         {/* Left Sidebar */}
         <aside className="customer-sidebar" style={{ width: 260, flexShrink: 0 }}>
-          <div style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: 16, padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 16, padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path || (item.path !== '/profile' && location.pathname.startsWith(item.path));
               const Icon = item.icon;

@@ -46,7 +46,7 @@ export default function CartPage() {
             const img = p.images?.[0]?.url || `https://via.placeholder.com/80x80?text=P`;
             const unitPrice = item.discountPrice && item.discountPrice < item.price ? item.discountPrice : item.price;
             return (
-              <div key={item._id || p._id} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--color-border)', padding: 16, display: 'flex', gap: 16, alignItems: 'flex-start', boxShadow: 'var(--shadow-sm)' }}>
+              <div key={item._id || p._id} style={{ background: 'var(--color-surface)', borderRadius: 12, border: '1px solid var(--color-border)', padding: 16, display: 'flex', gap: 16, alignItems: 'flex-start', boxShadow: 'var(--shadow-sm)' }}>
                 <Link to={`/products/${p.slug}`}>
                   <img src={img} alt={p.name} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} onError={(e) => { e.target.src = 'https://via.placeholder.com/80x80?text=P'; }} />
                 </Link>
@@ -74,7 +74,7 @@ export default function CartPage() {
         </div>
 
         {/* Summary */}
-        <div style={{ background: 'white', borderRadius: 14, border: '1px solid var(--color-border)', padding: 24, boxShadow: 'var(--shadow-sm)', position: 'sticky', top: 120 }}>
+        <div style={{ background: 'var(--color-surface)', borderRadius: 14, border: '1px solid var(--color-border)', padding: 24, boxShadow: 'var(--shadow-sm)', position: 'sticky', top: 120 }}>
           <h3 style={{ fontWeight: 800, fontSize: 18, marginBottom: 20 }}>Order Summary</h3>
 
           {/* Coupon */}
@@ -88,7 +88,7 @@ export default function CartPage() {
               {couponError && <p style={{ fontSize: 12, color: 'var(--color-error)', marginTop: 6 }}>{couponError}</p>}
             </div>
           ) : (
-            <div style={{ background: '#dcfce7', border: '1px solid #16a34a', borderRadius: 8, padding: '10px 14px', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ background: 'var(--color-primary-light)', border: '1px solid var(--color-primary)', borderRadius: 8, padding: '10px 14px', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-primary)' }}>🎉 Coupon: {cart.couponApplied.code}</p>
                 <p style={{ fontSize: 12, color: 'var(--color-primary)' }}>Saving ₹{cart.discountAmount?.toLocaleString('en-IN')}</p>

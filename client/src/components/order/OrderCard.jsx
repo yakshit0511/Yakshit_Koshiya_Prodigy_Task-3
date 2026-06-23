@@ -54,7 +54,7 @@ export default function OrderCard({ order, onCancel, onReturn, onReview }) {
   return (
     <div
       style={{
-        background: 'white',
+        background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
         borderRadius: 16,
         padding: 20,
@@ -67,7 +67,7 @@ export default function OrderCard({ order, onCancel, onReturn, onReview }) {
       className="order-card-hover"
     >
       {/* Header Row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, borderBottom: '1px solid #f1f5f9', paddingBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, borderBottom: '1px solid var(--color-border)', paddingBottom: 12 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ fontWeight: 800, fontSize: 15 }}>Order #{order._id.slice(-8).toUpperCase()}</span>
@@ -93,7 +93,7 @@ export default function OrderCard({ order, onCancel, onReturn, onReview }) {
           <img
             src={firstItem.product?.images?.[0]?.url || 'https://via.placeholder.com/60x60?text=Product'}
             alt={firstItem.product?.name || 'Product'}
-            style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, border: '1px solid #f1f5f9' }}
+            style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--color-border)' }}
             onError={(e) => { e.target.src = 'https://via.placeholder.com/60x60?text=P'; }}
           />
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -113,7 +113,7 @@ export default function OrderCard({ order, onCancel, onReturn, onReview }) {
       )}
 
       {/* Actions Row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, borderTop: '1px solid #f1f5f9', paddingTop: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, borderTop: '1px solid var(--color-border)', paddingTop: 12 }}>
         <Link to={`/my-orders/${order._id}`} className="btn btn-ghost btn-sm" style={{ padding: '8px 14px' }}>
           View Details <FiChevronRight />
         </Link>

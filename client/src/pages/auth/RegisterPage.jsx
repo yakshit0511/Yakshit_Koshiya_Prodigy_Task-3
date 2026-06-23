@@ -67,7 +67,7 @@ export default function RegisterPage() {
             <p style={{ color: 'var(--color-text-secondary)', fontSize: 14, marginTop: 4 }}>Join thousands of happy customers</p>
           </div>
 
-          {error && <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: 8, padding: '12px 16px', marginBottom: 20, color: '#dc2626', fontSize: 14 }}>❌ {error}</div>}
+          {error && <div style={{ background: 'var(--badge-error-bg, #fee2e2)', border: '1px solid var(--color-error)', borderRadius: 8, padding: '12px 16px', marginBottom: 20, color: 'var(--badge-error-color, #dc2626)', fontSize: 14 }}>❌ {error}</div>}
 
           <form onSubmit={handleSubmit}>
             <F name="name" label="Full Name" placeholder="Priya Sharma" required form={form} setForm={setForm} fieldErrors={fieldErrors} />
@@ -87,7 +87,7 @@ export default function RegisterPage() {
                 <div style={{ marginTop: 8 }}>
                   <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
                     {[1,2,3,4,5].map((i) => (
-                      <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= strength ? strengthColors[strength] : '#e5e7eb', transition: 'background 0.3s' }} />
+                      <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= strength ? strengthColors[strength] : 'var(--color-border)', transition: 'background 0.3s' }} />
                     ))}
                   </div>
                   <span style={{ fontSize: 11, color: strengthColors[strength], fontWeight: 600 }}>{strengthLabels[strength]}</span>

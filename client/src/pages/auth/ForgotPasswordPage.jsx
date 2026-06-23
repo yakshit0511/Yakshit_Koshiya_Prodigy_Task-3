@@ -37,7 +37,7 @@ export default function ForgotPasswordPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              {error && <div style={{ background: '#fee2e2', borderRadius: 8, padding: '12px 16px', marginBottom: 20, color: '#dc2626', fontSize: 14 }}>{error}</div>}
+              {error && <div style={{ background: 'var(--badge-error-bg, #fee2e2)', borderRadius: 8, padding: '12px 16px', marginBottom: 20, color: 'var(--badge-error-color, #dc2626)', fontSize: 14 }}>{error}</div>}
               <div className="form-group">
                 <label className="form-label">Email Address</label>
                 <input className="form-input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />

@@ -264,23 +264,23 @@ export default function AdminProductsPage() {
 
       {/* Stats Counters Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 32 }}>
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--color-border)', padding: 16, textAlign: 'center' }}>
+        <div style={{ background: 'var(--color-surface)', borderRadius: 12, border: '1px solid var(--color-border)', padding: 16, textAlign: 'center' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Total items</div>
           <div style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }}>{totalCount}</div>
         </div>
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--color-border)', padding: 16, textAlign: 'center' }}>
+        <div style={{ background: 'var(--color-surface)', borderRadius: 12, border: '1px solid var(--color-border)', padding: 16, textAlign: 'center' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-success)', textTransform: 'uppercase' }}>Active</div>
           <div style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }}>{activeCount}</div>
         </div>
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--color-border)', padding: 16, textAlign: 'center' }}>
+        <div style={{ background: 'var(--color-surface)', borderRadius: 12, border: '1px solid var(--color-border)', padding: 16, textAlign: 'center' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Inactive</div>
           <div style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }}>{inactiveCount}</div>
         </div>
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--color-border)', padding: 16, textAlign: 'center' }}>
+        <div style={{ background: 'var(--color-surface)', borderRadius: 12, border: '1px solid var(--color-border)', padding: 16, textAlign: 'center' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-warning)', textTransform: 'uppercase' }}>Low Stock</div>
           <div style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }}>{lowStockCount}</div>
         </div>
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--color-border)', padding: 16, textAlign: 'center' }}>
+        <div style={{ background: 'var(--color-surface)', borderRadius: 12, border: '1px solid var(--color-border)', padding: 16, textAlign: 'center' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-error)', textTransform: 'uppercase' }}>Out of Stock</div>
           <div style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }}>{outOfStockCount}</div>
         </div>
@@ -288,7 +288,7 @@ export default function AdminProductsPage() {
 
       {/* Query Filters Bar */}
       <div style={{
-        background: 'white',
+        background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
         borderRadius: 12,
         padding: 16,
@@ -347,14 +347,14 @@ export default function AdminProductsPage() {
               <button
                 onClick={() => handleBulkAction(selectedIds, 'activate', resetSelection)}
                 className="btn btn-outline btn-sm"
-                style={{ background: 'white', color: 'var(--color-primary)', borderColor: 'var(--color-primary)' }}
+                style={{ background: 'transparent', color: 'var(--color-primary)', borderColor: 'var(--color-primary)' }}
               >
                 Activate Selected
               </button>
               <button
                 onClick={() => handleBulkAction(selectedIds, 'deactivate', resetSelection)}
                 className="btn btn-outline btn-sm"
-                style={{ background: 'white', color: 'var(--color-text-secondary)', borderColor: 'var(--color-border)' }}
+                style={{ background: 'transparent', color: 'var(--color-text-secondary)', borderColor: 'var(--color-border)' }}
               >
                 Deactivate Selected
               </button>

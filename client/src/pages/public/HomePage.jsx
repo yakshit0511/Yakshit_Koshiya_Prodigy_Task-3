@@ -108,7 +108,7 @@ function CategoryGrid({ categories }) {
             style={{ textDecoration: 'none', flexShrink: 0 }}
           >
             <div style={{
-              background: 'white',
+              background: 'var(--color-surface)',
               borderRadius: 'var(--radius-lg)',
               border: '2px solid var(--color-border)',
               padding: '20px 24px',
@@ -210,7 +210,7 @@ function WhyChooseUs() {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
         {features.map((f) => (
-          <div key={f.title} style={{ background: 'white', borderRadius: 'var(--radius-lg)', padding: 28, textAlign: 'center', border: '1px solid var(--color-border)', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)' }}
+          <div key={f.title} style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', padding: 28, textAlign: 'center', border: '1px solid var(--color-border)', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)' }}
             onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = 'var(--shadow-lg)'; }}
             onMouseOut={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
           >
@@ -250,7 +250,7 @@ function Testimonials() {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${count}, 1fr)`, gap: 20 }}>
         {visible.map((t, i) => (
-          <div key={i} style={{ background: 'white', borderRadius: 'var(--radius-lg)', padding: 24, border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}>
+          <div key={i} style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', padding: 24, border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
               {[1,2,3,4,5].map((s) => <span key={s} style={{ color: s <= t.rating ? '#f59e0b' : '#e5e7eb' }}>★</span>)}
             </div>

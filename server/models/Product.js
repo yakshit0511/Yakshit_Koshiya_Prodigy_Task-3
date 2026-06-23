@@ -158,10 +158,15 @@ productSchema.virtual("effectivePrice").get(function () {
 
 // =============================================
 // INDEXES — for fast search & filter queries
-// Note: slug and sku already have unique:true which creates an index,
-// so we do NOT add schema.index() for those fields (avoids duplicate warning).
+// Note: slug (unique:true) and sku (unique:true) already have indexes
+// automatically created by Mongoose — do NOT add schema.index() for those.
 // =============================================
+
+// Full-text search — keep name/weights matching what's in MongoDB
+// (existing index: name_text_description_text_tags_text with equal weights)
 productSchema.index({ name: "text", description: "text", tags: "text" });
+
+// Filter / sort indexes
 productSchema.index({ category: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ ratings: -1 });

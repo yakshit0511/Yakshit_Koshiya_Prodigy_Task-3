@@ -93,11 +93,11 @@ export default function ProductCard({ product, onQuickView }) {
         </div>
         {/* Stock status */}
         {outOfStock ? (
-          <span style={{ fontSize: 11, color: 'var(--color-error)', fontWeight: 600, background: '#fee2e2', padding: '2px 8px', borderRadius: 4 }}>Out of Stock</span>
+          <span style={{ fontSize: 11, color: 'var(--badge-error-color, var(--color-error))', fontWeight: 600, background: 'var(--badge-error-bg, #fee2e2)', padding: '2px 8px', borderRadius: 4 }}>Out of Stock</span>
         ) : lowStock ? (
-          <span style={{ fontSize: 11, color: '#d97706', fontWeight: 600, background: '#fef3c7', padding: '2px 8px', borderRadius: 4 }}>Only {stock} left!</span>
+          <span style={{ fontSize: 11, color: 'var(--badge-warning-color, #d97706)', fontWeight: 600, background: 'var(--badge-warning-bg, #fef3c7)', padding: '2px 8px', borderRadius: 4 }}>Only {stock} left!</span>
         ) : (
-          <span style={{ fontSize: 11, color: 'var(--color-success)', fontWeight: 600, background: '#dcfce7', padding: '2px 8px', borderRadius: 4 }}>✓ In Stock</span>
+          <span style={{ fontSize: 11, color: 'var(--badge-success-color, var(--color-success))', fontWeight: 600, background: 'var(--badge-success-bg, #dcfce7)', padding: '2px 8px', borderRadius: 4 }}>✓ In Stock</span>
         )}
       </div>
 

@@ -213,7 +213,7 @@ export default function AdminCustomersPage() {
 
       {/* Filters Toolbar */}
       <div style={{
-        background: 'white',
+        background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
         borderRadius: 12,
         padding: 20,
@@ -277,18 +277,18 @@ export default function AdminCustomersPage() {
               display: 'flex',
               gap: 20,
               alignItems: 'center',
-              background: '#f8fafc',
+              background: 'var(--color-bg)',
               padding: 20,
               borderRadius: 10,
-              border: '1px solid #e2e8f0',
+              border: '1px solid var(--color-border)',
               marginBottom: 24
             }}>
               <div style={{
                 width: 60,
                 height: 60,
                 borderRadius: '50%',
-                background: customerDetail.customer?.isBlocked ? '#ffe4e6' : '#dcfce7',
-                color: customerDetail.customer?.isBlocked ? '#e11d48' : '#16a34a',
+                background: customerDetail.customer?.isBlocked ? 'var(--badge-error-bg, #ffe4e6)' : 'var(--badge-success-bg, #dcfce7)',
+                color: customerDetail.customer?.isBlocked ? 'var(--badge-error-color, #e11d48)' : 'var(--badge-success-color, #16a34a)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -377,7 +377,7 @@ export default function AdminCustomersPage() {
                   ) : (
                     <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
                       <thead>
-                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                        <tr style={{ background: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)' }}>
                           <th style={{ padding: '10px 14px' }}>Order Number</th>
                           <th style={{ padding: '10px 14px' }}>Date</th>
                           <th style={{ padding: '10px 14px' }}>Total Amount</th>
@@ -387,7 +387,7 @@ export default function AdminCustomersPage() {
                       </thead>
                       <tbody>
                         {customerDetail.recentOrders.map(ord => (
-                          <tr key={ord._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <tr key={ord._id} style={{ borderBottom: '1px solid var(--color-border)' }}>
                             <td style={{ padding: '10px 14px', fontWeight: 'bold' }}>
                               <a href={`/admin/orders/${ord._id}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
                                 #{ord.orderNumber || ord._id.slice(-8).toUpperCase()}
@@ -412,7 +412,7 @@ export default function AdminCustomersPage() {
                     <p style={{ color: 'var(--color-text-secondary)', textAlign: 'center', padding: 24, margin: 0 }}>No reviews submitted yet.</p>
                   ) : (
                     customerDetail.reviews.map(rev => (
-                      <div key={rev._id} style={{ border: '1px solid var(--color-border)', borderRadius: 8, padding: 12, background: '#fafafa' }}>
+                      <div key={rev._id} style={{ border: '1px solid var(--color-border)', borderRadius: 8, padding: 12, background: 'var(--color-bg)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                           <strong>Product: {rev.product?.name || 'Deleted Product'}</strong>
                           <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
@@ -425,7 +425,7 @@ export default function AdminCustomersPage() {
                           ))}
                         </div>
                         <div style={{ fontSize: 13, fontWeight: 700, margin: '4px 0' }}>{rev.title}</div>
-                        <p style={{ margin: 0, fontSize: 13, color: '#475569' }}>"{rev.comment}"</p>
+                        <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-secondary)' }}>"{rev.comment}"</p>
                       </div>
                     ))
                   )}
@@ -440,7 +440,7 @@ export default function AdminCustomersPage() {
                   ) : (
                     <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
                       <thead>
-                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                        <tr style={{ background: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)' }}>
                           <th style={{ padding: '10px 14px' }}>Ticket #</th>
                           <th style={{ padding: '10px 14px' }}>Subject</th>
                           <th style={{ padding: '10px 14px' }}>Priority</th>
@@ -450,7 +450,7 @@ export default function AdminCustomersPage() {
                       </thead>
                       <tbody>
                         {customerDetail.tickets.map(tix => (
-                          <tr key={tix._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <tr key={tix._id} style={{ borderBottom: '1px solid var(--color-border)' }}>
                             <td style={{ padding: '10px 14px', fontWeight: 'bold' }}>
                               <a href={`/admin/support/${tix._id}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
                                 #{tix.ticketNumber}

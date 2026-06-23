@@ -163,7 +163,7 @@ export default function AdminSupportTicketPage() {
           {/* Thread chat list */}
           <div 
             style={{ 
-              background: '#f8fafc', 
+              background: 'var(--color-bg)', 
               border: '1px solid var(--color-border)',
               borderRadius: 12, 
               padding: 20, 
@@ -244,7 +244,7 @@ export default function AdminSupportTicketPage() {
 
           {/* Reply Form */}
           {ticket.status !== 'Closed' ? (
-            <div style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: 12, padding: 20 }}>
+            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 20 }}>
               
               {/* Quick Reply Templates selector */}
               <div className="form-group" style={{ marginBottom: 14 }}>
@@ -252,7 +252,7 @@ export default function AdminSupportTicketPage() {
                 <select 
                   className="form-input form-select"
                   onChange={handleTemplateSelect}
-                  style={{ fontSize: 13, background: '#f8fafc' }}
+                  style={{ fontSize: 13, background: 'var(--color-bg)' }}
                 >
                   {templates.map((tpl, idx) => (
                     <option key={idx} value={tpl.value}>{tpl.label}</option>
@@ -281,7 +281,7 @@ export default function AdminSupportTicketPage() {
                       <div 
                         key={idx} 
                         style={{ 
-                          background: '#f1f5f9', 
+                          background: 'var(--color-border)', 
                           border: '1px solid #cbd5e1', 
                           borderRadius: 6, 
                           padding: '6px 12px', 
@@ -341,7 +341,7 @@ export default function AdminSupportTicketPage() {
 
             </div>
           ) : (
-            <div style={{ background: '#f1f5f9', border: '1px dashed #cbd5e1', borderRadius: 12, padding: 24, textAlign: 'center', color: 'var(--color-text-secondary)' }}>
+            <div style={{ background: 'var(--color-bg)', border: '1px dashed var(--color-border-hover)', borderRadius: 12, padding: 24, textAlign: 'center', color: 'var(--color-text-secondary)' }}>
               🔒 This support ticket is Closed. Change status on the right sidebar to reopen the conversation.
             </div>
           )}
@@ -352,7 +352,7 @@ export default function AdminSupportTicketPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           
           {/* Admin Controls Panel */}
-          <div style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 16px 0', borderBottom: '1px solid #cbd5e1', paddingBottom: 10 }}>
               🛠️ Ticket Settings
             </h2>
@@ -398,7 +398,7 @@ export default function AdminSupportTicketPage() {
           </div>
 
           {/* Customer Profile card */}
-          <div style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 16px 0', borderBottom: '1px solid #cbd5e1', paddingBottom: 10 }}>
               👤 Customer Account
             </h2>
@@ -409,8 +409,8 @@ export default function AdminSupportTicketPage() {
                     width: 36, 
                     height: 36, 
                     borderRadius: '50%', 
-                    background: '#e0e7ff', 
-                    color: '#4f46e5', 
+                    background: 'var(--color-accent-light)', 
+                    color: 'var(--color-accent)', 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center', 
@@ -424,14 +424,14 @@ export default function AdminSupportTicketPage() {
                   </div>
                 </div>
 
-                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
+                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <FiMail style={{ color: '#94a3b8' }} />
-                    <span style={{ color: '#334155' }}>{ticket.user.email}</span>
+                    <FiMail style={{ color: 'var(--color-text-muted)' }} />
+                    <span style={{ color: 'var(--color-text)' }}>{ticket.user.email}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <FiPhone style={{ color: '#94a3b8' }} />
-                    <span style={{ color: '#334155' }}>{ticket.user.phone || 'No phone registered'}</span>
+                    <FiPhone style={{ color: 'var(--color-text-muted)' }} />
+                    <span style={{ color: 'var(--color-text)' }}>{ticket.user.phone || 'No phone registered'}</span>
                   </div>
                 </div>
 
@@ -450,7 +450,7 @@ export default function AdminSupportTicketPage() {
 
           {/* Related Order card if applicable */}
           {ticket.relatedOrder && (
-            <div style={{ background: 'white', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
+            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 16px 0', borderBottom: '1px solid #cbd5e1', paddingBottom: 10 }}>
                 🛒 Related Order Context
               </h2>

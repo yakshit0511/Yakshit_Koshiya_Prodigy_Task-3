@@ -12,10 +12,5 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // If customer goes to customer routes but is admin, redirect to admin dashboard
-  if (user?.role === 'admin') {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-
   return children;
 }

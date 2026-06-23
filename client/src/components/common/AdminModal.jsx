@@ -34,7 +34,7 @@ export default function AdminModal({ isOpen, onClose, title, children, footer, w
         className="animate-scale-in"
         style={{
           position: 'relative',
-          background: 'white',
+          background: 'var(--color-surface)',
           borderRadius: 12,
           width: '100%',
           maxWidth: width,
@@ -75,7 +75,7 @@ export default function AdminModal({ isOpen, onClose, title, children, footer, w
             display: 'flex',
             justifyContent: 'flex-end',
             gap: 12,
-            background: '#f8fafc',
+            background: 'var(--color-bg)',
           }}>
             {footer}
           </div>

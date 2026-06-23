@@ -48,7 +48,7 @@ export default function StatsCard({ icon, value, label, trend, isPositive, color
 
   return (
     <div style={{
-      background: 'white',
+      background: 'var(--color-surface)',
       borderRadius: 12,
       border: '1px solid var(--color-border)',
       padding: 24,

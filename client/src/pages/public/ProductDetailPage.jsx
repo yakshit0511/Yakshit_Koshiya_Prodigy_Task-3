@@ -143,7 +143,7 @@ export default function ProductDetailPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, marginBottom: 48 }}>
         {/* Image Gallery */}
         <div>
-          <div style={{ background: '#f8fafc', borderRadius: 'var(--radius-xl)', overflow: 'hidden', marginBottom: 12, aspectRatio: '4/3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--color-bg)', borderRadius: 'var(--radius-xl)', overflow: 'hidden', marginBottom: 12, aspectRatio: '4/3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <img
               src={images?.[activeImage]?.url || `https://via.placeholder.com/500x375?text=${encodeURIComponent(name)}`}
               alt={name}
@@ -180,7 +180,7 @@ export default function ProductDetailPage() {
             {hasDiscount && (
               <>
                 <span style={{ fontSize: 18, color: 'var(--color-text-muted)', textDecoration: 'line-through' }}>₹{price?.toLocaleString('en-IN')}</span>
-                <span style={{ background: '#dcfce7', color: 'var(--color-primary)', fontWeight: 700, padding: '2px 8px', borderRadius: 20, fontSize: 13 }}>{Math.round(discountPercent)}% OFF</span>
+                <span style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)', fontWeight: 700, padding: '2px 8px', borderRadius: 20, fontSize: 13 }}>{Math.round(discountPercent)}% OFF</span>
               </>
             )}
           </div>
@@ -283,7 +283,7 @@ export default function ProductDetailPage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 40 }}>
               {reviews.map((r) => (
-                <div key={r._id} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--color-border)', padding: 20 }}>
+                <div key={r._id} style={{ background: 'var(--color-surface)', borderRadius: 12, border: '1px solid var(--color-border)', padding: 20 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                       <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--color-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{r.user?.name?.[0] || 'U'}</div>
@@ -310,7 +310,7 @@ export default function ProductDetailPage() {
 
           {/* Review form */}
           {isAuthenticated && (
-            <div style={{ background: 'white', borderRadius: 14, border: '1px solid var(--color-border)', padding: 24, maxWidth: 600 }}>
+            <div style={{ background: 'var(--color-surface)', borderRadius: 14, border: '1px solid var(--color-border)', padding: 24, maxWidth: 600 }}>
               <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Write a Review</h3>
               <div style={{ marginBottom: 16 }}>
                 <label style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 8 }}>Your Rating <span style={{ color: 'var(--color-error)' }}>*</span></label>

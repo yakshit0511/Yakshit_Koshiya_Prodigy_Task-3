@@ -18,14 +18,19 @@ export default function AdminSidebar() {
   return (
     <div style={{
       width: 260,
+      minWidth: 260,
       background: '#0f172a',
       color: '#f1f5f9',
-      minHeight: '100vh',
-      position: 'sticky',
+      height: '100vh',
+      position: 'fixed',
+      left: 0,
       top: 0,
       display: 'flex',
       flexDirection: 'column',
       padding: '24px 16px',
+      overflowY: 'hidden',
+      flexShrink: 0,
+      zIndex: 1000,
     }}>
       {/* Admin Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32, paddingLeft: 8 }}>

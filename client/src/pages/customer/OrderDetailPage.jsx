@@ -198,7 +198,7 @@ export default function OrderDetailPage() {
                 top: 14,
                 bottom: 14,
                 width: 2,
-                background: '#cbd5e1',
+                background: 'var(--color-border)',
                 zIndex: 0
               }} />
 
@@ -219,8 +219,8 @@ export default function OrderDetailPage() {
                       width: 24,
                       height: 24,
                       borderRadius: '50%',
-                      background: isCompleted ? 'var(--color-success)' : isCurrent ? 'var(--color-primary-light)' : 'white',
-                      border: `2px solid ${isCompleted ? 'var(--color-success)' : isCurrent ? 'var(--color-primary)' : '#cbd5e1'}`,
+                      background: isCompleted ? 'var(--color-success)' : isCurrent ? 'var(--color-primary-light)' : 'var(--color-surface)',
+                      border: `2px solid ${isCompleted ? 'var(--color-success)' : isCurrent ? 'var(--color-primary)' : 'var(--color-border)'}`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -282,7 +282,7 @@ export default function OrderDetailPage() {
                       </div>
                     )}
                     {order.cancelReason && (
-                      <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', background: '#fee2e240', padding: '6px 12px', borderRadius: 6, marginTop: 4 }}>
+                      <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', background: 'var(--badge-error-bg, rgba(239,68,68,0.1))', padding: '6px 12px', borderRadius: 6, marginTop: 4 }}>
                         Reason: "{order.cancelReason}"
                       </div>
                     )}

@@ -135,7 +135,7 @@ export default function TicketDetailPage() {
         </div>
 
         {ticket.relatedOrder && (
-          <div style={{ marginTop: 12, fontSize: 13, background: '#f8fafc', padding: '8px 16px', borderRadius: 8, display: 'inline-block' }}>
+          <div style={{ marginTop: 12, fontSize: 13, background: 'var(--color-bg)', padding: '8px 16px', borderRadius: 8, display: 'inline-block' }}>
             🔗 <strong>Related Order:</strong>{' '}
             <Link to={`/my-orders/${ticket.relatedOrder._id}`} style={{ fontWeight: 600, color: 'var(--color-primary)' }}>
               #{ticket.relatedOrder.orderNumber || ticket.relatedOrder._id.slice(-8).toUpperCase()} ({ticket.relatedOrder.orderStatus})
@@ -145,7 +145,7 @@ export default function TicketDetailPage() {
       </div>
 
       {/* Messaging Flow Interface */}
-      <div style={{ background: '#f8fafc', border: '1px solid var(--color-border)', borderRadius: 16, display: 'flex', flexDirection: 'column', height: 500, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: 16, display: 'flex', flexDirection: 'column', height: 500, overflow: 'hidden' }}>
         {/* Messages Body */}
         <div style={{ flex: 1, padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
           
@@ -157,7 +157,7 @@ export default function TicketDetailPage() {
                 key={msg._id}
                 style={{
                   alignSelf: isUser ? 'flex-end' : 'flex-start',
-                  background: isUser ? '#e0f2fe' : 'white',
+                  background: isUser ? 'var(--color-accent-light)' : 'var(--color-surface)',
                   border: '1px solid var(--color-border)',
                   borderRadius: 12,
                   padding: '10px 14px',
@@ -179,7 +179,7 @@ export default function TicketDetailPage() {
 
                 {/* Attachments inside message */}
                 {msg.attachments && msg.attachments.length > 0 && (
-                  <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4, borderTop: '1px solid #e2e8f0', paddingTop: 6 }}>
+                  <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4, borderTop: '1px solid var(--color-border)', paddingTop: 6 }}>
                     {msg.attachments.map((file, fIdx) => (
                       <a
                         key={fIdx}
@@ -200,7 +200,7 @@ export default function TicketDetailPage() {
         </div>
 
         {/* Reply Section */}
-        <div style={{ background: 'white', borderTop: '1px solid var(--color-border)', padding: 12 }}>
+        <div style={{ background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)', padding: 12 }}>
           {!isClosed ? (
             <form onSubmit={handleSendReply} style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -234,7 +234,7 @@ export default function TicketDetailPage() {
                   />
                   <div style={{ display: 'flex', gap: 4 }}>
                     {replyFiles.map((file, idx) => (
-                      <span key={idx} style={{ fontSize: 11, background: '#f1f5f9', padding: '2px 6px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <span key={idx} style={{ fontSize: 11, background: 'var(--color-bg)', padding: '2px 6px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                         {file.name.slice(0, 10)}...
                         <button type="button" onClick={() => setReplyFiles(replyFiles.filter((_, i) => i !== idx))} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>✕</button>
                       </span>
